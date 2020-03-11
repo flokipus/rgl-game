@@ -9,7 +9,7 @@ class AsciiCellCreator:
     def create(self, symbol: str, symb_color: pygame.Color, back_color: pygame.Color,
                antialias: bool = True, symbol_pos=None):
         letter = self._font.render(symbol, antialias, symb_color)
-        surface = pygame.Surface(self._background_size)
+        surface = pygame.Surface(self._background_size, pygame.SRCALPHA)
         surface.fill(back_color)
         if symbol_pos is None:
             symsize = letter.get_size()
@@ -33,3 +33,12 @@ class AsciiCellCreator:
 
     def set_font(self, font: pygame.font):
         self._font = font
+
+
+class BackgroundCreator:
+    def __init__(self, default_background_size: tuple):
+        self._back_size = default_background_size
+
+    @property
+    def get_size(self):
+        return self._back_size

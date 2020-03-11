@@ -55,11 +55,61 @@ def player_empty():
     return cell_creator.create('@', AsciiConsts.BLUE, AsciiConsts.BLACK)
 
 
+def symbol_over_transparent():
+    return cell_creator.create('F', AsciiConsts.BLUE, (0, 0, 0, 0))
+
+
+def sand_background():
+    return cell_creator.create('', (0, 0, 0), AsciiConsts.SAND_BACKGROUND_COLOR)
+
+
+def empty_cell():
+    return cell_creator.create('.', AsciiConsts.DEFAULT_SYMBOL_COLOR, (0, 0, 0, 0))
+
+
+layer0 = []
+sand_cell0 = sand_background()
+for i in range(25):
+    hor_line = []
+    for j in range(20):
+        hor_line.append(sand_cell0)
+    layer0.append(hor_line)
+
+layer1 = []
+def_back0 = empty_cell()
+for i in range(25):
+    hor_line = []
+    for j in range(20):
+        hor_line.append(def_back0)
+    layer1.append(hor_line)
+
+class GameObject:
+    def __init__(self, visualisation=None, xy=None, interaction=None, *args, **kwargs):
+        self._visualisation = visualisation
+        self._xy = xy
+        self._interaction = interaction
+
+    def interact(self, *args, **kwargs):
+        pass
+
+
+class MapCell(GameObject):
+    def __init__(self, visualisation, xy, interaction):
+        GameObject.__init__(self, visualisation, xy, interaction)
+
+
+class MapCell:
+    def __init__(self, default_symbol, default_color):
+        self._default_symbol = default_symbol
+        self._default_color = default_color
+
+
 def main():
     empty = empty_background()
     sand = sand_background()
     wall = wall_background()
     player = player_empty()
+    ss = symbol_over_transparent()
     pygame.init()
     clock = pygame.time.Clock()
     game_display = pygame.display.set_mode(GameMapConsts.SIZE)
@@ -111,12 +161,19 @@ def main():
 
         for i in range(25):
             for j in range(20):
-                screen.blit(sand, (i*AsciiConsts.CELL_WIDTH, j*AsciiConsts.CELL_HEIGHT))
+                screen.blit(layer0[i][j], (i*AsciiConsts.CELL_WIDTH, j*AsciiConsts.CELL_HEIGHT))
+
+        for i in range(25):
+            for j in range(20):
+                screen.blit(layer1[i][j], (i*AsciiConsts.CELL_WIDTH, j*AsciiConsts.CELL_HEIGHT))
 
         screen.blit(empty, (AsciiConsts.CELL_WIDTH, AsciiConsts.CELL_HEIGHT))
         screen.blit(wall, (3*AsciiConsts.CELL_WIDTH, 3*AsciiConsts.CELL_HEIGHT))
 
         screen.blit(player, (5 * AsciiConsts.CELL_WIDTH, 5 * AsciiConsts.CELL_HEIGHT))
+        screen.blit(empty, (6 * AsciiConsts.CELL_WIDTH, 6 * AsciiConsts.CELL_HEIGHT))
+        screen.blit(player, (6 * AsciiConsts.CELL_WIDTH, 6 * AsciiConsts.CELL_HEIGHT))
+        screen.blit(ss, (7 * AsciiConsts.CELL_WIDTH, 6 * AsciiConsts.CELL_HEIGHT))
         # # 1 level: lines of greed
         # for i in range(1, count_x):
         #     startpos = (i * cell_width, 0)
