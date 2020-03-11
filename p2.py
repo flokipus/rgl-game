@@ -1,39 +1,9 @@
 import pygame
+from CellCreator import *
+
 
 pygame.init()
 
-
-class AsciiCell:
-    """
-
-    """
-    def __init__(self, ascii_symbol, font: pygame.font.Font, ascii_symbol_color: pygame.Color,
-                 antialias: bool, symbol_pos, cell_background_color: pygame.Color,
-                 cell_size: tuple):
-        self.ascii_symbol = ascii_symbol
-        self.font = font
-        self.ascii_symbol_color = ascii_symbol_color
-        self.antialias = antialias
-        self.symbol_pos = symbol_pos
-        self.cell_background_color = cell_background_color
-        self.cell_size = cell_size
-        self.draw_self()
-
-    def draw_self(self):
-        surface_letter = self.font.render(self.ascii_symbol, self.antialias, self.ascii_symbol_color)
-        surface_background = pygame.Surface(self.cell_size)
-        surface_background.fill(self.cell_background_color)
-        surface_background.blit(surface_letter, self.symbol_pos)
-
-
-def AsciiCell(ascii_symbol, font: pygame.font.Font, ascii_symbol_color: pygame.Color,
-                 antialias: bool, symbol_pos, cell_background_color: pygame.Color,
-                 cell_size: tuple):
-    letter = font.render(ascii_symbol, antialias, ascii_symbol_color)
-    surface = pygame.Surface(cell_size)
-    surface.fill(cell_background_color)
-    surface.blit(letter, symbol_pos)
-    return surface
 
 class GraphicSettings:
     FPS = 30
@@ -46,14 +16,15 @@ class GameMapConsts:
 
 
 class AsciiConsts:
-    FONT_SIZE = 30
+    FONT_SIZE = 40
     CELL_WIDTH = 25
     CELL_HEIGHT = 25
     CELL_SIZE = (CELL_WIDTH, CELL_HEIGHT)
     # DEFAULT_BACKGROUND_COLOR = pygame.Color(50, 50, 50)
     # DEFAULT_SYMBOL_COLOR = pygame.Color(255, 255, 255)
-    DEFAULT_BACKGROUND_COLOR = (50, 50, 50)
-    DEFAULT_SYMBOL_COLOR = (255, 255, 255)
+    DEFAULT_BACKGROUND_COLOR = pygame.Color(50, 50, 50)
+    SAND_BACKGROUND_COLOR = pygame.Color(205, 150, 60)
+    DEFAULT_SYMBOL_COLOR = pygame.Color(255, 255, 255)
     ANTIALIAS = True
     DEFAULT_FONT = pygame.font.Font(None, FONT_SIZE)
 
@@ -65,23 +36,30 @@ class AsciiConsts:
     YARN_BLUE = (100, 100, 255)
 
 
+cell_creator = AsciiCellCreator(AsciiConsts.DEFAULT_FONT, AsciiConsts.CELL_SIZE)
+
+
 def empty_background():
-    symbol = '.'
-    symbol_pos = (AsciiConsts.CELL_WIDTH//2, 0)
-    return AsciiCell(symbol, AsciiConsts.DEFAULT_FONT, AsciiConsts.DEFAULT_SYMBOL_COLOR,
-                     AsciiConsts.ANTIALIAS, symbol_pos, AsciiConsts.DEFAULT_BACKGROUND_COLOR, AsciiConsts.CELL_SIZE)
+    return cell_creator.create('.', AsciiConsts.WHITE, AsciiConsts.BLACK)
+
+
+def sand_background():
+    return cell_creator.create('.', AsciiConsts.DEFAULT_SYMBOL_COLOR, AsciiConsts.SAND_BACKGROUND_COLOR)
 
 
 def wall_background():
-    symbol = '#'
-    symbol_pos = (AsciiConsts.CELL_WIDTH // 2, AsciiConsts.CELL_HEIGHT // 4)
-    return AsciiCell(symbol, AsciiConsts.DEFAULT_FONT, AsciiConsts.DEFAULT_SYMBOL_COLOR,
-                     AsciiConsts.ANTIALIAS, symbol_pos, AsciiConsts.DEFAULT_BACKGROUND_COLOR, AsciiConsts.CELL_SIZE)
+    return cell_creator.create('#', AsciiConsts.DEFAULT_SYMBOL_COLOR, AsciiConsts.BLACK)
+
+
+def player_empty():
+    return cell_creator.create('@', AsciiConsts.BLUE, AsciiConsts.BLACK)
 
 
 def main():
     empty = empty_background()
+    sand = sand_background()
     wall = wall_background()
+    player = player_empty()
     pygame.init()
     clock = pygame.time.Clock()
     game_display = pygame.display.set_mode(GameMapConsts.SIZE)
@@ -133,7 +111,12 @@ def main():
 
         for i in range(25):
             for j in range(20):
-                screen.blit(empty, (i*AsciiConsts.CELL_WIDTH, j*AsciiConsts.CELL_HEIGHT))
+                screen.blit(sand, (i*AsciiConsts.CELL_WIDTH, j*AsciiConsts.CELL_HEIGHT))
+
+        screen.blit(empty, (AsciiConsts.CELL_WIDTH, AsciiConsts.CELL_HEIGHT))
+        screen.blit(wall, (3*AsciiConsts.CELL_WIDTH, 3*AsciiConsts.CELL_HEIGHT))
+
+        screen.blit(player, (5 * AsciiConsts.CELL_WIDTH, 5 * AsciiConsts.CELL_HEIGHT))
         # # 1 level: lines of greed
         # for i in range(1, count_x):
         #     startpos = (i * cell_width, 0)
