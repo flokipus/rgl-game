@@ -10,7 +10,7 @@ class IDraftsman:
     def __init__(self, draw_if=true_for_everything):
         self._draw_if = draw_if
 
-    def draw_visual_obj(self, screen, visual_obj: game_objects.IVisualObject):
+    def draw_visual_obj(self, screen, visual_obj: game_objects.VisualObjectBase):
         if self._draw_if(visual_obj, screen):
             screen.blit(visual_obj.sprite, visual_obj.xy)
 
