@@ -8,3 +8,5 @@ dot_over_transparent = genascii.symbol_over_transparent('.')
 o_over_transparent = genascii.symbol_over_transparent('O')
 dog_over_transparent = genascii.symbol_over_transparent('@')
 wall_over_transparent = genascii.symbol_over_transparent('#')
+
+

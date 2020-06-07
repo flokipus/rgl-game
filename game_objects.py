@@ -1,6 +1,9 @@
 from settings import screen
+from settings import colors
 import asciicels
 import sparse_index
+import pygame
+from generators import asciicell
 
 
 class IdGeneratorBase:
@@ -105,6 +108,14 @@ class WallObject(LetterObject):
         super().__init__('#', xy, layer_num)
 
 
+class Inventory(GameObjectBase):
+    def __init__(self):
+        gen = asciicell.AsciiCellCreator(pygame.font.Font(None, screen.FONT_SIZE), (100, 100))
+        inv_sprite = gen.create('inventory', colors.WHITE, colors.BLACK)
+        visual = VisualObjectBase(inv_sprite, (0, 0), 5)
+        super().__init__(visual)
+
+
 class Camera(GameObjectBase):
     def __init__(self, xy):
         logic = LogicObjectBase(xy)
@@ -181,6 +192,10 @@ for j in range(2, 6):
 super_go = LetterObject('O', (100, 300), 3)
 
 main_hero = LetterObject('@', (0, 0), 3)
+
+central_object = main_hero
+
+inventory_object = Inventory()
 
 ACTIVE_OBJECTS.add_object(super_go)
 ACTIVE_OBJECTS.add_object(main_hero)
