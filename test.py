@@ -1,14 +1,13 @@
 import sys
 from settings import screen
 from settings import colors
-import math
 import pygame
 import asciicels
 import visualisation
 import game_objects
-import time
-import heapq
-import itertools
+
+from user_input import keyboard_processor
+import commqueue
 
 
 def manage_xy_pyg(old_xy, new_xy):
@@ -34,12 +33,12 @@ MAIN_DISPLAY.fill(colors.DEFAULT_BACKGROUND_COLOR)
 draftsman = visualisation.IDraftsman()
 visualisation_core = visualisation.IVisualisationCore(MAIN_DISPLAY, 10, draftsman)
 
-for obj_id in game_objects.STATIC_OBJECTS.id_to_objs:
-    obj = game_objects.STATIC_OBJECTS.id_to_objs[obj_id]
+for obj_id in game_objects.STATIC_OBJECTS.container:
+    obj = game_objects.STATIC_OBJECTS.container[obj_id]
     layer_num = obj.visual.layer_num
     visualisation_core.get_static_layers[layer_num].append(obj.visual)
-for obj_id in game_objects.ACTIVE_OBJECTS.id_to_objs:
-    obj = game_objects.ACTIVE_OBJECTS.id_to_objs[obj_id]
+for obj_id in game_objects.ACTIVE_OBJECTS.container:
+    obj = game_objects.ACTIVE_OBJECTS.container[obj_id]
     layer_num = obj.visual.layer_num
     visualisation_core.get_dynamic_layers[layer_num].add(obj.visual)
 
@@ -126,55 +125,8 @@ def create_close_inventory_command():
 # USEREVENT         code
 
 
-user_keyboard_events = [pygame.KEYDOWN, pygame.KEYUP]
+
 user_mouse_events = [pygame.MOUSEMOTION, pygame.MOUSEBUTTONUP, pygame.MOUSEBUTTONDOWN]
-
-
-class UserKeyboardProcessor:
-    def __init__(self, delay):
-        self.__last_pressed_key = None
-        self.__time_press = 0.0
-        self.__delay = delay
-        self.__flag_first_time_process = True
-
-    def process_input(self, pyg_events):
-        for event in pyg_events:
-            if event.type not in user_keyboard_events:
-                raise RuntimeError
-            self._process_key_event(event)
-        return self._final_key()
-
-    def _process_key_event(self, event):
-        if event.type == pygame.KEYDOWN:
-            self.__last_pressed_key = event.key
-            self.__time_press = time.time()
-            self.__flag_first_time_process = True
-        elif event.type == pygame.KEYUP:
-            if event.key == self.__last_pressed_key:
-                self.__last_pressed_key = None
-
-    def _final_key(self):
-        """
-        Обрабатывается первая нажатая клавиша;
-        если клавиша нажата более self._delay секунд, то она также
-        пораждает соответствующую ей команду;
-        если несколько клавиш нажаты более self._delay секунд,
-        то пораждает команду та, которая нажата дольше всего;
-        если не нажата ни одна, то возвращается None
-        """
-        if self.__last_pressed_key is None:
-            return None
-        if self.__flag_first_time_process:
-            self.__flag_first_time_process = False
-            return self.__last_pressed_key
-        else:
-            current_time = time.time()
-            delta = current_time - self.__time_press
-            if delta > self.__delay:
-                return self.__last_pressed_key
-            else:
-                return None
-
 
 move_keys = {pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT}
 inventory_keys = {pygame.K_i, pygame.K_TAB}
@@ -190,8 +142,6 @@ escape_keys = {pygame.K_ESCAPE}
 #     #     create_open_inventory_command(main_gobj, key)
 
 
-commands = []
-user_keyboard_processor = UserKeyboardProcessor(delay=0.5)
 
 
 def gobj_key_to_command(gobj, key):
@@ -209,55 +159,45 @@ def gobj_key_to_command(gobj, key):
         return None
 
 
-import queue
-import itertools
-
-
-class CommandsPriorityQueue:
-    def __init__(self, capacity=0):
-        self.__queue = queue.PriorityQueue(capacity)
-        self.__iter = itertools.count(start=0, step=1)
-
-    def add_command(self, command, priority, block=False, timeout=None):
-        self.__queue.put((priority, next(self.__iter), command), block, timeout)
-
-    def get_top(self, block=False, timeout=None):
-        prio, count, command = self.__queue.get(block, timeout)
-        return command
-
-    def empty(self):
-        return self.__queue.empty()
-
-    def size(self):
-        return self.__queue.qsize()
-
-
 def handle_input():
     exit_event = pygame.event.get([pygame.QUIT])
     if len(exit_event) > 0:
         print("user exit the game")
         sys.exit()
-
-    kb_events = pygame.event.get(user_keyboard_events)
+    kb_events = pygame.event.get(keyboard_processor.user_keyboard_events)
     key = user_keyboard_processor.process_input(kb_events)
-
     return key
+
 
 def handle_command():
     pass
 
 
-commands_queue = CommandsPriorityQueue()
+user_keyboard_processor = keyboard_processor.UserKeyboardProcessor(delay=0.5)
+commands_queue = commqueue.CommandsPriorityQueue()
+states = ['usr_move', 'usr_animation', 'npc_move', 'npc_animation']
+state = states[0]
+
+animations = commqueue.CommandsPriorityQueue()
+npc_moves = commqueue.CommandsPriorityQueue()
+
 while True:
     # 1: handle user input
-    key = handle_input()
-    # 2: transform user input to commands
+    input_key = handle_input()
+    # 2: transform user input to command
     command, priority = gobj_key_to_command(game_objects.central_object, key)
+
+    if state == 'waiting_user_move':
+
+        state = 'waiting_user_animation'
+        pass
+
+
     if command is not None:
         commands_queue.add_command(command, priority)
     # 3: TURN BASE SPECIFIC: take one command from top and execute it
     if not commands_queue.empty():
-        command = commands.pop()
+        command = commands_queue.pop()
         command()
     # 4:
 

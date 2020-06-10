@@ -33,12 +33,3 @@ class AsciiCellCreator:
 
     def set_font(self, font: pygame.font):
         self._font = font
-
-
-class BackgroundCreator:
-    def __init__(self, default_background_size: tuple):
-        self._back_size = default_background_size
-
-    @property
-    def get_size(self):
-        return self._back_size

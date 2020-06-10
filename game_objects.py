@@ -1,9 +1,17 @@
 from settings import screen
-from settings import colors
-import asciicels
-import sparse_index
-import pygame
-from generators import asciicell
+import random
+
+
+class GameState:
+    def __init__(self):
+        self.id_turn = -1
+        self.battle_flag = False
+        self.main_hero_move = True
+        self.vision_area = None  # TODO: что-то с быстрым поиском.
+        # Суть такова: если объект в области, то отрисовываем его
+        self.camera_xy = (0, 0)
+        self.actors = None
+        self.main_char_id = -1
 
 
 class IdGeneratorBase:
@@ -15,7 +23,7 @@ class IdGeneratorBase:
         return cls.__current_id
 
 
-class VisualObjectBase:
+class Visual:
     def __init__(self, sprite, xy=(0, 0), layer_num=0):
         self._layer_num = layer_num
         self._sprite = sprite
@@ -43,7 +51,7 @@ class VisualObjectBase:
         self._layer_num = layer_num
 
 
-class LogicObjectBase:
+class Logic:
     def __init__(self, absolute_xy=(0, 0)):
         self._absolute_xy = absolute_xy
 
@@ -55,13 +63,16 @@ class LogicObjectBase:
         self._absolute_xy = xy
 
 
-class GameObjectBase:
+class GameObject:
     __idGenerator = IdGeneratorBase
 
-    def __init__(self, visual=None, logic=LogicObjectBase()):
+    def __init__(self, visual: Visual, logic: Logic):
         self._visual = visual
         self._logic = logic
-        self.__id = GameObjectBase.__idGenerator.generate()
+        self.__id = GameObject.__idGenerator.generate()
+
+    def update(self, game_state: GameState):
+        pass
 
     @property
     def obj_id(self):
@@ -91,38 +102,7 @@ class GameObjectBase:
             return self.__id == other.__id
 
 
-class Ground(GameObjectBase):
-    def __init__(self, sprite, xy, layer_num):
-        super().__init__(VisualObjectBase(sprite, xy, layer_num), LogicObjectBase(xy))
-
-
-class LetterObject(GameObjectBase):
-    def __init__(self, letter: chr, xy, layer_num):
-        sprite = asciicels.genascii.symbol_over_transparent(letter)
-        super().__init__(VisualObjectBase(sprite, xy, layer_num), LogicObjectBase(xy))
-        self._letter = letter
-
-
-class WallObject(LetterObject):
-    def __init__(self, xy, layer_num):
-        super().__init__('#', xy, layer_num)
-
-
-class Inventory(GameObjectBase):
-    def __init__(self):
-        gen = asciicell.AsciiCellCreator(pygame.font.Font(None, screen.FONT_SIZE), (100, 100))
-        inv_sprite = gen.create('inventory', colors.WHITE, colors.BLACK)
-        visual = VisualObjectBase(inv_sprite, (0, 0), 5)
-        super().__init__(visual)
-
-
-class Camera(GameObjectBase):
-    def __init__(self, xy):
-        logic = LogicObjectBase(xy)
-        super().__init__(logic=logic, visual=None)
-
-
-class GameObjectContainer:
+class GOContainer:
     def __init__(self, indexing):
         self.__container = {}
         self.__indexing = indexing
@@ -144,80 +124,49 @@ class GameObjectContainer:
         return [self.__container[obj_id] for obj_id in obj_ids]
 
     @property
-    def id_to_objs(self):
+    def container(self):
         return self.__container
 
 
-ACTIVE_OBJECTS = GameObjectContainer(sparse_index.SparseIndexing())  # Предполагают какое-то взаимодействие
-STATIC_OBJECTS = GameObjectContainer(sparse_index.SparseIndexing())  # По большому счету это только спрайт
-CAMERA = Camera(xy=(0, 0))
+class NPC(GameObject):
+    """
+    Самый простой тип npc: всего 3 вида поведения
+    """
+    def __init__(self, visual: Visual, logic: Logic, attitude=0):
+        """
+        attitude in {-1, 0, 1}: -1 -- враждебный,
+                                 0 -- нейтральный,
+                                 1 -- дружелюбный,
+                          TODO: -2 -- берсерк, атакует ближайшего врага
+        """
+        super().__init__(visual, logic)
+        self.__attitude = attitude
+        pass
 
-
-#########################################
-# CREATE BASIC GRAPHIC OBJECTS: map #####
-#########################################
-cells_count_x = screen.SIZE[0] // screen.CELL_WIDTH
-cells_count_y = screen.SIZE[1] // screen.CELL_HEIGHT
-print("cells hor: {}, cells vert: {}.".format(cells_count_x, cells_count_y))
-for i in range(cells_count_x):
-    for j in range(cells_count_y):
-        obj_xy = (i * screen.CELL_WIDTH, j * screen.CELL_HEIGHT)
-        ground_backgr = Ground(asciicels.sand_background, obj_xy, 0)
-        ground_empty = Ground(asciicels.dot_over_transparent, obj_xy, 1)
-        STATIC_OBJECTS.add_object(ground_backgr)
-        ACTIVE_OBJECTS.add_object(ground_empty)
-
-for i in range(cells_count_x//4, cells_count_x//4 + 10):
-    obj_xy = (i * screen.CELL_WIDTH, 2 * screen.CELL_HEIGHT)
-    wall = WallObject(obj_xy, 2)
-    ACTIVE_OBJECTS.add_object(wall)
-for i in range(cells_count_x//4, cells_count_x//4 + 4):
-    obj_xy = (i * screen.CELL_WIDTH, (2 + 3) * screen.CELL_HEIGHT)
-    wall = WallObject(obj_xy, 2)
-    ACTIVE_OBJECTS.add_object(wall)
-for i in range(cells_count_x//4 + 5, cells_count_x//4 + 10):
-    obj_xy = (i * screen.CELL_WIDTH, (2 + 3) * screen.CELL_HEIGHT)
-    wall = WallObject(obj_xy, 2)
-    ACTIVE_OBJECTS.add_object(wall)
-for j in range(2, 6):
-    obj_xy = (cells_count_x//4 * screen.CELL_WIDTH, j * screen.CELL_HEIGHT)
-    wall = WallObject(obj_xy, 2)
-    ACTIVE_OBJECTS.add_object(wall)
-for j in range(2, 6):
-    obj_xy = ((cells_count_x//4 + 9) * screen.CELL_WIDTH, j * screen.CELL_HEIGHT)
-    wall = WallObject(obj_xy, 2)
-    ACTIVE_OBJECTS.add_object(wall)
-
-
-super_go = LetterObject('O', (100, 300), 3)
-
-main_hero = LetterObject('@', (0, 0), 3)
-
-central_object = main_hero
-
-inventory_object = Inventory()
-
-ACTIVE_OBJECTS.add_object(super_go)
-ACTIVE_OBJECTS.add_object(main_hero)
-
-
-# def dist(xy1, xy2):
-#     return max(abs(xy1[0] - xy2[0]), abs(xy1[1] - xy2[1]))
-#
-#
-# def get_list_of_close_objects(abs_xy, radius):
-#     result = []
-#     for obj in ACTIVE_OBJECTS:
-#         if dist(obj.logic.xy, abs_xy) <= radius:
-#             result.append(obj)
-#     return result
-# def dist(xy1, xy2):
-#     return max(abs(xy1[0] - xy2[0]), abs(xy1[1] - xy2[1]))
-#
-#
-# def get_list_of_close_objects(abs_xy, radius):
-#     result = []
-#     for obj in ACTIVE_OBJECTS:
-#         if dist(obj.logic.xy, abs_xy) <= radius:
-#             result.append(obj)
-#     return result
+    def update(self, game_state: GameState):
+        if game_state.id_turn == self.obj_id:
+            if self.__attitude == 0:
+                direction = random.randint(-1, 1)
+                new_x = self.logic.xy[0] + screen.CELL_WIDTH * direction
+                direction = random.randint(-1, 1)
+                new_y = self.logic.xy[1] + screen.CELL_HEIGHT * direction
+                self.logic.set_xy((new_x, new_y))
+            elif self.__attitude == -1:
+                # Идем ближайшим путем ко врагу
+                mid = game_state.main_char_id
+                m_chr = game_state.actors.get_obj_by_id(mid)
+                m_x, m_y = m_chr.logix.xy
+                x, y = self.logic.xy
+                if x > m_x:
+                    x -= screen.CELL_WIDTH
+                elif x < m_x:
+                    x += screen.CELL_WIDTH
+                if y > m_y:
+                    y -= screen.CELL_HEIGHT
+                elif y < m_y:
+                    y -= screen.CELL_HEIGHT
+                self.logic.set_xy((x, y))
+        # Update only visual part
+        x, y = self.logic.xy
+        x_cam, y_cam = game_state.camera_xy
+        self.visual.set_xy((x - x_cam, y - y_cam))
