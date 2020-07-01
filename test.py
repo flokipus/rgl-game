@@ -3,8 +3,8 @@ from settings import screen
 from settings import colors
 import pygame
 import asciicels
-import visualisation
-import game_objects
+import graphics
+import gobject
 
 from user_input import keyboard_processor
 import commqueue
@@ -12,9 +12,9 @@ import commqueue
 
 def manage_xy_pyg(old_xy, new_xy):
     x, y = old_xy
-    possible_interact = game_objects.ACTIVE_OBJECTS.get_objs_in_tile(new_xy)
+    possible_interact = gobject.ACTIVE_OBJECTS.get_objs_in_tile(new_xy)
     for obj in possible_interact:
-        if type(obj) == game_objects.WallObject:
+        if type(obj) == gobject.WallObject:
             # dist_old = game_objects.dist(old_xy, obj.logic.xy)
             # dist_new = game_objects.dist(new_xy, obj.logic.xy)
             # if dist_new < dist_old:
@@ -30,15 +30,15 @@ print(screen)
 MAIN_DISPLAY = pygame.display.set_mode(screen.SIZE)
 MAIN_DISPLAY.fill(colors.DEFAULT_BACKGROUND_COLOR)
 
-draftsman = visualisation.IDraftsman()
-visualisation_core = visualisation.IVisualisationCore(MAIN_DISPLAY, 10, draftsman)
+draftsman = graphics.Draftsman()
+visualisation_core = graphics.Graphics(MAIN_DISPLAY, 10, draftsman)
 
-for obj_id in game_objects.STATIC_OBJECTS.container:
-    obj = game_objects.STATIC_OBJECTS.container[obj_id]
+for obj_id in gobject.STATIC_OBJECTS.container:
+    obj = gobject.STATIC_OBJECTS.container[obj_id]
     layer_num = obj.visual.layer_num
     visualisation_core.get_static_layers[layer_num].append(obj.visual)
-for obj_id in game_objects.ACTIVE_OBJECTS.container:
-    obj = game_objects.ACTIVE_OBJECTS.container[obj_id]
+for obj_id in gobject.ACTIVE_OBJECTS.container:
+    obj = gobject.ACTIVE_OBJECTS.container[obj_id]
     layer_num = obj.visual.layer_num
     visualisation_core.get_dynamic_layers[layer_num].add(obj.visual)
 
@@ -53,8 +53,8 @@ def try_to_move(gobj, move_xy):
     x, y = gobj.logic.xy
     mx, my = move_xy
     new_xy = (x + mx, y + my)
-    gobj.logic.set_xy(manage_xy_pyg(game_objects.main_hero.logic.xy, new_xy))
-    gobj.visual.set_xy(game_objects.main_hero.logic.xy)
+    gobj.logic.set_xy(manage_xy_pyg(gobject.main_hero.logic.xy, new_xy))
+    gobj.visual.set_xy(gobject.main_hero.logic.xy)
 
 
 class Command:
@@ -68,9 +68,9 @@ class Command:
 
 
 def create_move_command(gobj, move_key):
-    if key is None:
+    if move_key is None:
         return None
-    if isinstance(gobj, game_objects.LetterObject):
+    if isinstance(gobj, gobject.LetterObject):
         move_xy = (0, 0)
         if move_key in [pygame.K_RIGHT, pygame.K_KP6]:
             move_xy = (screen.CELL_WIDTH, 0)
@@ -86,15 +86,15 @@ def create_move_command(gobj, move_key):
 
 
 def open_inventory():
-    game_objects.central_object = game_objects.inventory_object
-    visualisation_core.add_visual_obj_to_dynamic_layer(game_objects.inventory_object.visual, 5)
+    gobject.central_object = gobject.inventory_object
+    visualisation_core.add_visual_obj_to_dynamic_layer(gobject.inventory_object.visual, 5)
 
 
 def close_inventory():
-    game_objects.central_object = game_objects.main_hero
+    gobject.central_object = gobject.main_hero
     for layer in visualisation_core.get_dynamic_layers:
-        if game_objects.inventory_object.visual in layer:
-            layer.remove(game_objects.inventory_object.visual)
+        if gobject.inventory_object.visual in layer:
+            layer.remove(gobject.inventory_object.visual)
 
 
 def create_open_inventory_command():
@@ -145,12 +145,12 @@ escape_keys = {pygame.K_ESCAPE}
 
 
 def gobj_key_to_command(gobj, key):
-    if gobj is game_objects.main_hero:
+    if gobj is gobject.main_hero:
         if key in move_keys:
             return create_move_command(gobj, key)
         elif key in inventory_keys:
             return create_open_inventory_command()
-    elif gobj is game_objects.inventory_object:
+    elif gobj is gobject.inventory_object:
         if key in move_keys:
             return None
         elif key in escape_keys:
@@ -185,7 +185,7 @@ while True:
     # 1: handle user input
     input_key = handle_input()
     # 2: transform user input to command
-    command, priority = gobj_key_to_command(game_objects.central_object, key)
+    command, priority = gobj_key_to_command(gobject.central_object, key)
 
     if state == 'waiting_user_move':
 

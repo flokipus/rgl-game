@@ -1,15 +1,15 @@
 from settings import screen
 from user_input import keyboard_processor
 import test_map
-import game_objects
+import gobject
 import sparse_index
-import visualisation
+import graphics
 import pygame
 
 ###########
 # Form actors
-ACTORS = game_objects.GOContainer(indexing=sparse_index.SparseIndexing())
-STATIC = game_objects.GOContainer(indexing=sparse_index.SparseIndexing())
+ACTORS = gobject.GOContainer(indexing=sparse_index.SparseIndexing(test_map.cells_count_x, test_map.cells_count_y))
+STATIC = gobject.GOContainer(indexing=sparse_index.SparseIndexing(test_map.cells_count_x, test_map.cells_count_y))
 
 ACTORS.add_object(test_map.dragon)
 ACTORS.add_object(test_map.main_char)
@@ -22,62 +22,66 @@ STATIC.add_object(test_map.map_gobj)
 # Form draftsman
 pygame.init()
 MAIN_DISPLAY = pygame.display.set_mode(screen.SIZE)
-draftsman = visualisation.IDraftsman()
-visualisation_core = visualisation.IVisualisationCore(MAIN_DISPLAY, 10, draftsman)
+draftsman = graphics.Draftsman()
+visualisation_core = graphics.Graphics(MAIN_DISPLAY, 10, draftsman)
 for id_obj in ACTORS.container:
     gobj = ACTORS.get_obj_by_id(id_obj)
-    visualisation_core.add_visual_obj_to_dynamic_layer(gobj.visual, gobj.visual.layer_num)
+    visualisation_core.add_obj_to_dynamic_layer(gobj, gobj.layer)
 for id_obj in STATIC.container:
     gobj = STATIC.get_obj_by_id(id_obj)
-    visualisation_core.add_visual_obj_to_static_layer(gobj.visual, gobj.visual.layer_num)
+    visualisation_core.add_obj_to_static_layer(gobj, gobj.layer)
 ###########
 
 # Start main circle
-game_state = game_objects.GameState()
-game_state.main_char_id = test_map.main_char.obj_id
-game_state.camera_xy = (0, 0)
-game_state.actors = ACTORS
+game_data = gobject.GameData()
+game_data.main_char_id = test_map.main_char.id
+game_data.camera_xy = (0, 0)
+game_data.actors = ACTORS
 # game_state.id_turn = game_state.main_char_id
-game_state.id_turn = test_map.dragon.obj_id
-game_state.battle_flag = True
+game_data.id_turn = test_map.dragon.id
+game_data.battle_flag = True
+game_data.map_size = (test_map.cells_count_x, test_map.cells_count_y)
 
 kproc = keyboard_processor.UserKeyboardProcessor(delay=0.5)
 move_keys = {pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT}
 
 CLOCK = pygame.time.Clock()
 turns_queue = list(ACTORS.container)
-this_turn_ind = turns_queue.index(game_state.main_char_id)
+this_turn_ind = turns_queue.index(game_data.main_char_id)
 main_char = test_map.main_char
-print(test_map.dragon.obj_id)
-print(test_map.main_char.obj_id)
-while True:
-    game_state.id_turn = turns_queue[this_turn_ind]
+print(test_map.dragon.id)
+print(test_map.main_char.id)
 
-    # print(game_state.id_turn)
-    # game_state.id_turn = all_ids[obj_index]
+
+while True:
+    # корректная обработка input'а
     ckey = kproc.process_input(pygame.event.get(keyboard_processor.user_keyboard_events))
-    if ckey in move_keys and game_state.main_hero_move:
+
+    if ckey in move_keys and game_data.main_hero_move:
         move_xy = (0, 0)
         if ckey in [pygame.K_RIGHT, pygame.K_KP6]:
-            move_xy = (screen.CELL_WIDTH, 0)
+            move_xy = (1, 0)
         if ckey in [pygame.K_LEFT, pygame.K_KP4]:
-            move_xy = (-screen.CELL_WIDTH, 0)
+            move_xy = (-1, 0)
         if ckey in [pygame.K_UP, pygame.K_KP8]:
-            move_xy = (0, -screen.CELL_HEIGHT)
+            move_xy = (0, -1)
         if ckey in [pygame.K_DOWN, pygame.K_KP2]:
-            move_xy = (0, screen.CELL_HEIGHT)
-        x, y = main_char.logic.xy
-        main_char.logic.set_xy((x + move_xy[0], y + move_xy[1]))
-        main_char.visual.set_xy((x + move_xy[0], y + move_xy[1]))
-        this_turn_ind = (this_turn_ind + 1) % len(turns_queue)
-        game_state.main_hero_move = False
-    elif not game_state.main_hero_move:
-        for gid in ACTORS.container:
-            game_state.id_turn = gid
-            gobj = ACTORS.container[gid]
-            gobj.update(game_state)
-        game_state.main_hero_move = True
+            move_xy = (0, 1)
+        x, y = main_char.xy
 
+        ACTORS.get_control_of_obj(main_char.id)
+        new_x, new_y = x + move_xy[0], y + move_xy[1]
+        if gobject.check_if_in_map((new_x, new_y), game_data.map_size):
+            main_char.set_xy((new_x, new_y))
+        ACTORS.return_control_of_obj(main_char)
+        game_data.main_hero_move = False
+    elif not game_data.main_hero_move:
+        for gid in ACTORS.container:
+            game_data.id_turn = gid
+            gobj = ACTORS.get_control_of_obj(gid)
+            gobj.update(game_data)
+            ACTORS.return_control_of_obj(gobj)
+        game_data.main_hero_move = True
     visualisation_core.draw_all()
     pygame.display.update()
     CLOCK.tick(screen.FPS)
