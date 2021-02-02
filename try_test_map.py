@@ -1,6 +1,6 @@
 from settings import screen
 from user_input import keyboard_processor
-import test_map
+import sandmap
 import gobject
 import sparse_index
 import graphics
@@ -8,14 +8,14 @@ import pygame
 
 ###########
 # Form actors
-ACTORS = gobject.GOContainer(indexing=sparse_index.SparseIndexing(test_map.cells_count_x, test_map.cells_count_y))
-STATIC = gobject.GOContainer(indexing=sparse_index.SparseIndexing(test_map.cells_count_x, test_map.cells_count_y))
+ACTORS = gobject.GOContainer(indexing=sparse_index.SparseIndexing(sandmap.cells_count_x, sandmap.cells_count_y))
+STATIC = gobject.GOContainer(indexing=sparse_index.SparseIndexing(sandmap.cells_count_x, sandmap.cells_count_y))
 
-ACTORS.add_object(test_map.dragon)
-ACTORS.add_object(test_map.main_char)
-for w in test_map.walls:
+ACTORS.add_object(sandmap.dragon)
+ACTORS.add_object(sandmap.main_char)
+for w in sandmap.walls:
     ACTORS.add_object(w)
-STATIC.add_object(test_map.map_gobj)
+STATIC.add_object(sandmap.map_gobj)
 ###########
 
 ###########
@@ -34,13 +34,13 @@ for id_obj in STATIC.container:
 
 # Start main circle
 game_data = gobject.GameData()
-game_data.main_char_id = test_map.main_char.id
+game_data.main_char_id = sandmap.main_char.id
 game_data.camera_xy = (0, 0)
 game_data.actors = ACTORS
 # game_state.id_turn = game_state.main_char_id
-game_data.id_turn = test_map.dragon.id
+game_data.id_turn = sandmap.dragon.id
 game_data.battle_flag = True
-game_data.map_size = (test_map.cells_count_x, test_map.cells_count_y)
+game_data.map_size = (sandmap.cells_count_x, sandmap.cells_count_y)
 
 kproc = keyboard_processor.UserKeyboardProcessor(delay=0.5)
 move_keys = {pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT}
@@ -48,9 +48,9 @@ move_keys = {pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT}
 CLOCK = pygame.time.Clock()
 turns_queue = list(ACTORS.container)
 this_turn_ind = turns_queue.index(game_data.main_char_id)
-main_char = test_map.main_char
-print(test_map.dragon.id)
-print(test_map.main_char.id)
+main_char = sandmap.main_char
+print(sandmap.dragon.id)
+print(sandmap.main_char.id)
 
 
 while True:
