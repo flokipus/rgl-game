@@ -20,6 +20,9 @@ class AsciiCellCreator:
         surface.blit(letter, symbol_pos)
         return surface
 
+    def create_empty_cell(self):
+        return pygame.Surface(self._background_size, pygame.SRCALPHA)
+
     @property
     def get_back_size(self):
         return self._background_size

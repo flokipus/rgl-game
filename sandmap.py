@@ -1,9 +1,7 @@
 from settings import screen, colors
-from cell_sprites import sprite_ascii, predef
-import gobject
+from graphics.cell_sprites import sprite_ascii, predef
+
 import pygame
-import sys
-import sparse_index
 
 cells_count_x = 100
 cells_count_y = 50
@@ -51,27 +49,27 @@ def create_map_sprite(map_size):
     return map_sprite
 
 
-def create_main_char(xy):
-    char_sprite = predef.human
-    main_char = gobject.GameObject(xy=xy, sprite=char_sprite, layer=3)
-    return main_char
-
-
-def create_monster_dragon(xy):
-    char_sprite = predef.dragon
-    dragon = gobject.NPC(xy=xy, sprite=char_sprite, layer=3)
-    return dragon
-
-
-def create_obstacles(xys):
-    result = []
-    for xy in xys:
-        result.append(gobject.GameObject(xy, None))
-    return result
+# def create_main_char(xy):
+#     char_sprite = predef.human
+#     main_char = gobject.GameObject(xy=xy, graphics=char_sprite, layer=3)
+#     return main_char
+#
+#
+# def create_monster_dragon(xy):
+#     char_sprite = predef.dragon
+#     dragon = gobject.NPC(xy=xy, graphics=char_sprite, layer=3)
+#     return dragon
+#
+#
+# def create_obstacles(xys):
+#     result = []
+#     for xy in xys:
+#         result.append(gobject.GameObject(xy, None))
+#     return result
 
 
 map_sprite = create_map_sprite(map_size)
-map_gobj = gobject.GameObject(xy=(0, 0), sprite=map_sprite, layer=0)
-main_char = create_main_char((0, 0))
-dragon = create_monster_dragon((3, 10))
-walls = create_obstacles(form_walls_xy())
+# map_gobj = gobject.GameObject(xy=(0, 0), graphics=map_sprite, layer=0)
+# main_char = create_main_char((0, 0))
+# dragon = create_monster_dragon((3, 10))
+# walls = create_obstacles(form_walls_xy())

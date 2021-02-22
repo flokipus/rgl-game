@@ -1,7 +1,0 @@
-
-
-class LogicalCore:
-    pass
-
-
-

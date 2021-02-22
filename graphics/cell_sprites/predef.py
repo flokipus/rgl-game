@@ -12,3 +12,5 @@ human = __cell_creator.create('@', colors.DEFAULT_SYMBOL_COLOR, colors.TRANSPARE
 dot = __cell_creator.create('.', colors.DEFAULT_SYMBOL_COLOR, colors.TRANSPARENT_COLOR)
 dragon = __cell_creator.create('D', colors.BLUE, colors.TRANSPARENT_COLOR)
 
+shadow = pygame.draw.ellipse(__cell_creator.create_empty_cell(), (80, 80, 80, 200), (0, 20, 0, 20))
+
