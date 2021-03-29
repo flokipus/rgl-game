@@ -1,7 +1,7 @@
 import pygame
 import time
 
-user_keyboard_events = [pygame.KEYDOWN, pygame.KEYUP]
+USER_KEYBOARD_EVENTS = [pygame.KEYDOWN, pygame.KEYUP]
 
 
 class UserKeyboardProcessor:
@@ -16,7 +16,7 @@ class UserKeyboardProcessor:
         Передавать только эвенты, которые отвечают keyboard
         """
         for event in pyg_events:
-            if event.type not in user_keyboard_events:
+            if event.type not in USER_KEYBOARD_EVENTS:
                 raise RuntimeError
             self._process_key_event(event)
         return self._final_key()

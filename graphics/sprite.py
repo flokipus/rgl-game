@@ -1,7 +1,11 @@
 from pygame import Surface
 
+from utils import Vec2i
+
 
 class Sprite:
-    def __init__(self, surface: Surface, offset_xy: tuple = (0, 0)):
+    def __init__(self, surface: Surface):
         self.surface = surface
-        self.offset_xy = offset_xy
+
+    def draw_at_pos(self, surface_where: Surface, pixel_offset: Vec2i) -> None:
+        surface_where.blit(self.surface, (pixel_offset.x, pixel_offset.y))

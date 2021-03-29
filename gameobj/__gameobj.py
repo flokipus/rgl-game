@@ -2,6 +2,7 @@ from states.basic import BaseState
 from graphics.animations import Animation
 
 from queue import Queue
+from typing import NamedTuple, overload
 
 
 class BaseGameObject:
@@ -19,7 +20,7 @@ class BaseGameObject:
             self._state.enter(self)
 
     def handle_order(self, order):
-        return_state = self._state.handle_order(self, order)
+        return_state = self._state.handle_command(self, order)
         if return_state is not None:
             self._state.exit(self)
             self._state = return_state

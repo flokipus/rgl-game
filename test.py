@@ -1,11 +1,11 @@
 from graphics.cell_sprites import predef
 from settings import screen, colors
 from user_input import keyboard_processor
-from gameobj.gameobj import BaseMonster
+from gameobj.__gameobj import BaseMonster
 from states.actorstates import ActorStandRealTime
 from graphics.sprite import Sprite
 from graphics.animations import *
-from order.order import AttackOrder, SwiftMove
+from command.command import AttackOrder, SwiftMove
 
 import math
 import queue as qqq
@@ -34,7 +34,7 @@ class Command:
 # Form draftsman
 pygame.init()
 
-MAIN_DISPLAY = pygame.display.set_mode(screen.SIZE)
+MAIN_DISPLAY = pygame.display.set_mode(screen.SCREEN_SIZE)
 
 # kproc = keyboard_processor.UserKeyboardProcessor(delay=0.5)
 kproc = keyboard_processor.UserKeyboardProcessor(delay=0)
@@ -56,7 +56,7 @@ CLOCK = pygame.time.Clock()
 
 
 def draw_gobj(display, gobj):
-    x, y = gobj.xy
+    x, y = gobwj.xy
     dx, dy = gobj.sprite.offset_xy
     im_x, im_y = (x + dx) * screen.CELL_WIDTH, (y + dy) * screen.CELL_HEIGHT
     display.blit(gobj.sprite.surface, (im_x, im_y))
@@ -66,7 +66,7 @@ while True:
 
     ################################
     # корректная обработка input'а
-    ckey = kproc.process_input(pygame.event.get(keyboard_processor.user_keyboard_events))
+    ckey = kproc.process_input(pygame.event.get(keyboard_processor.USER_KEYBOARD_EVENTS))
     order = None
     if ckey in move_keys:
         dx, dy = 0, 0
@@ -81,7 +81,7 @@ while True:
         x, y = human.xy
         # drag_x, drag_y = dragon.xy
         # if abs(dx + x - drag_x) < 1 and abs(dy + y - drag_y) < 1:
-        #     order = AttackOrder((dx, dy), dragon)
+        #     command = AttackOrder((dx, dy), dragon)
         #     order_to_dragon = SufferOrder()
         #     damage = 1
         #     if dragon.is_alive():
