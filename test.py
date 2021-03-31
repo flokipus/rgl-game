@@ -2,13 +2,10 @@ from graphics.cell_sprites import predef
 from settings import screen, colors
 from user_input import keyboard_processor
 from gameobj.__gameobj import BaseMonster
-from states.actorstates import ActorStandRealTime
-from graphics.sprite import Sprite
+from gameobj.states import ActorStandRealTime
 from graphics.animations import *
 from command.command import AttackOrder, SwiftMove
 
-import math
-import queue as qqq
 import sandmap
 import pygame
 

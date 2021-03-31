@@ -1,8 +1,7 @@
-from typing import overload, Union
 import pygame
+from typing import Union, overload
 
-
-from utils import Vec2i
+from utils.utils import Vec2i
 
 
 class GameObject:
