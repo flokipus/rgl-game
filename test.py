@@ -1,106 +1,189 @@
-from graphics.cell_sprites import predef
-from settings import screen, colors
-from user_input import keyboard_processor
-from gameobj.__gameobj import BaseMonster
-from gameobj.states import ActorStandRealTime
-from graphics.animations import *
-from command.command import AttackOrder, SwiftMove
-
-import sandmap
+from __future__ import annotations
 import pygame
+from typing import List, Callable, Any
+
+from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
+from map.tilemaps import test_tile_map, TileMap, Tile, draw_tile_descartes
+from settings import colors
+from settings.screen import FONT_SIZE, CELL_SIZE, SCREEN_SIZE
+from utils.utils import Vec2i
+from gameobj.actorgobj import Actor
+from gameobj.states import ActorStand
+from user_input.keyboard_processor import UserKeyboardProcessor, USER_KEYBOARD_EVENTS
+from command.command import MoveCommand, Command
 
 
-class Command:
-    def __init__(self, func, **kwargs):
-        self._func = func
-        self._kwargs = kwargs
+class ActorTurn:
+    def __init__(self, actor, rest_time):
+        self.actor = actor
+        self.rest_time = rest_time
 
-    def exec(self):
-        self._func(**self._kwargs)
+    def __le__(self, other: ActorTurn) -> bool:
+        return self.rest_time <= other.rest_time
 
-    @property
-    def func(self):
-        return self._func
+    def __lt__(self, other: ActorTurn) -> bool:
+        return self.rest_time < other.rest_time
 
-    @property
-    def kwargs(self):
-        return self._kwargs
+    def __ge__(self, other: ActorTurn) -> bool:
+        return self.rest_time >= other.rest_time
 
-
-###########
-# Form draftsman
-pygame.init()
-
-MAIN_DISPLAY = pygame.display.set_mode(screen.SCREEN_SIZE)
-
-# kproc = keyboard_processor.UserKeyboardProcessor(delay=0.5)
-kproc = keyboard_processor.UserKeyboardProcessor(delay=0)
-move_keys = {pygame.K_w, pygame.K_UP, pygame.K_s, pygame.K_DOWN, pygame.K_a, pygame.K_LEFT, pygame.K_d, pygame.K_RIGHT}
-attack_keys = {pygame.K_z, pygame.K_x}
+    def __gt__(self, other: ActorTurn) -> bool:
+        return self.rest_time > other.rest_time
 
 
-map_objects = []
+class OrderedQueue:
+    def __init__(self, *, data: List[Any] = None, compare: Callable[[Any], Any] = None):
+        if data is not None:
+            self.data = data
+        else:
+            self.data = []
+        if compare is not None:
+            if callable(compare):
+                self.compare = compare
+            else:
+                raise AttributeError('order is not callable')
+        self.data.sort(key=self.compare)
 
-human_anim = StaticStandAnimation(Sprite(predef.human))
-human = BaseMonster(ActorStandRealTime(), (5, 5), human_anim, 100, 15, map_objects)
+    def add_item(self, item) -> None:
+        self.data.append(item)
+        self._sort()
 
-dragon_anim = StaticStandAnimation(Sprite(predef.dragon))
-dragon = BaseMonster(ActorStandRealTime(), (10, 5), dragon_anim, 100, 40, map_objects)
+    def top_item(self) -> Any:
+        """Return the smallest item in queue"""
+        return self.data[-1]
 
-map_objects += [human, dragon]
+    def pop_item(self) -> Any:
+        """Remove the smallest item in queue"""
+        return self.data.pop(-1)
 
-CLOCK = pygame.time.Clock()
+    def empty(self) -> bool:
+        return len(self.data) == 0
+
+    def _sort(self):
+        self.data.sort(key=self.compare, reverse=True)
+
+    def clear(self) -> None:
+        self.data.clear()
+
+    def delete_items(self, compare: Callable[[Any], Any]) -> None:
+        raise NotImplementedError('ALARM!')
 
 
-def draw_gobj(display, gobj):
-    x, y = gobwj.xy
-    dx, dy = gobj.sprite.offset_xy
-    im_x, im_y = (x + dx) * screen.CELL_WIDTH, (y + dy) * screen.CELL_HEIGHT
-    display.blit(gobj.sprite.surface, (im_x, im_y))
+if __name__ == '__main__':
+    pygame.init()
+    clock = pygame.time.Clock()
+
+    tile_map = test_tile_map()
+    back_sprite = tile_map.to_surface()
+
+    dots = TileMap()
+    for ij in tile_map.tiles:
+        dot_center = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
+            '.',
+            colors.WHITE,
+            colors.TRANSPARENT_COLOR
+        )
+        dots.set_tile(ij, Tile(dot_center))
+
+    MAIN_DISPLAY = pygame.display.set_mode(SCREEN_SIZE)
+    MAIN_DISPLAY.fill(colors.BLACK)
+
+    time_end = pygame.time.get_ticks()
 
 
-while True:
 
-    ################################
-    # корректная обработка input'а
-    ckey = kproc.process_input(pygame.event.get(keyboard_processor.USER_KEYBOARD_EVENTS))
-    order = None
-    if ckey in move_keys:
-        dx, dy = 0, 0
-        if ckey in {pygame.K_UP, pygame.K_w}:
-            dy = -1
-        elif ckey in {pygame.K_DOWN, pygame.K_s}:
-            dy = 1
-        elif ckey in {pygame.K_LEFT, pygame.K_a}:
-            dx = -1
-        elif ckey in {pygame.K_RIGHT, pygame.K_d}:
-            dx = 1
-        x, y = human.xy
-        # drag_x, drag_y = dragon.xy
-        # if abs(dx + x - drag_x) < 1 and abs(dy + y - drag_y) < 1:
-        #     command = AttackOrder((dx, dy), dragon)
-        #     order_to_dragon = SufferOrder()
-        #     damage = 1
-        #     if dragon.is_alive():
-        #         pass
-        # else:
-        order = SwiftMove((dx, dy))
-    elif ckey in attack_keys:
-        if ckey == pygame.K_z:
-            order = AttackOrder((-1, 0))
-        if ckey == pygame.K_x:
-            order = AttackOrder((1, 0))
-    #################################
+    input_queue = list()
 
-    human.handle_order(order)
-    human.update()
+    m_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
+        '@',
+        colors.WHITE,
+        colors.TRANSPARENT_COLOR
+    )
+    main_hero = Actor(Vec2i(8, 18), ActorStand(), input_queue, m_spr)
 
-    dragon.update()
+    d_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
+        'D',
+        colors.BLUE,
+        colors.TRANSPARENT_COLOR
+    )
+    n_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
+        '@',
+        colors.BLACK_GREY,
+        colors.TRANSPARENT_COLOR
+    )
 
-    MAIN_DISPLAY.fill(colors.DEFAULT_BACKGROUND_COLOR)
-    MAIN_DISPLAY.blit(sandmap.map_sprite, (0 * screen.CELL_WIDTH, 0 * screen.CELL_HEIGHT))
-    draw_gobj(MAIN_DISPLAY, human)
-    draw_gobj(MAIN_DISPLAY, dragon)
-    pygame.display.update()
-    CLOCK.tick(screen.FPS)
-    pass
+    ACTORS = list()
+    ACTORS.append(main_hero)
+
+    moves_queue = list()
+    for actor in ACTORS:
+        moves_queue.append(actor)
+
+    EVENT_QUEUE = []
+
+    user_input_proc = UserKeyboardProcessor(0.3)
+    MOVE_KEYS = {pygame.K_w, pygame.K_UP, pygame.K_s, pygame.K_DOWN, pygame.K_a, pygame.K_LEFT, pygame.K_d,
+                 pygame.K_RIGHT}
+    while True:
+        # print('------')
+        time_begin = pygame.time.get_ticks()
+        # print('still_have_ticks: {}'.format(time_begin - time_end))
+        # print(time_begin)
+
+        ckey = user_input_proc.process_input(pygame.event.get(USER_KEYBOARD_EVENTS))
+        if ckey in MOVE_KEYS:
+            print('Move keys')
+            di, dj = 0, 0
+            if ckey in {pygame.K_UP, pygame.K_w}:
+                dj = 1
+            elif ckey in {pygame.K_DOWN, pygame.K_s}:
+                dj = -1
+            elif ckey in {pygame.K_LEFT, pygame.K_a}:
+                di = -1
+            elif ckey in {pygame.K_RIGHT, pygame.K_d}:
+                di = 1
+            input_queue.append(MoveCommand(Vec2i(di, dj)))
+        if ckey == pygame.K_ESCAPE:
+            input_queue.clear()
+
+        curr_actor = moves_queue[0]
+        if curr_actor.ready_to_move():
+            command = curr_actor.request_command()
+            if isinstance(command, MoveCommand):
+                cur_pos = curr_actor.get_pos()
+                next_pos = cur_pos + command.dij
+                target_tile = tile_map.get_tile(next_pos)
+                if target_tile is not None and target_tile.can_move():
+                    # APPLY COMMAND
+                    moves_queue.pop(0)
+                    curr_actor.handle_command()
+                    moves_queue.append(curr_actor)
+                    EVENT_QUEUE.append((curr_actor, command))
+                    pass
+
+        for actor in ACTORS:
+            actor.update()
+
+        MAIN_DISPLAY.fill(colors.BLACK)
+        # Layer 0
+        for ij in tile_map.tiles:
+            draw_tile_descartes(tile_map.get_tile(ij).sprite, ij, MAIN_DISPLAY)
+
+        draw_tile_descartes(main_hero.sprite, main_hero.pos, MAIN_DISPLAY)
+
+        # Layer 1
+        for ij in dots.tiles:
+            draw_tile_descartes(dots.get_tile(ij).sprite, ij, MAIN_DISPLAY)
+
+        for actor in ACTORS:
+            draw_tile_descartes(actor.sprite, actor.get_pos(), MAIN_DISPLAY)
+
+        pygame.display.update()
+
+        time_end = pygame.time.get_ticks()
+        elapsed = time_end - time_begin
+
+        # print(time_end)
+        # print(elapsed)
+        # print(clock.get_fps())
+        clock.tick(30)
