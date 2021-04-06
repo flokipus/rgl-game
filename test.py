@@ -3,7 +3,8 @@ import pygame
 from typing import List, Callable, Any
 from collections import namedtuple
 
-from command.command_channel import UICommandChannel
+from ai.aiprocessor import SimpleAgressiveAI
+from command.command_channel import UICommandChannel, AICommandChannel
 from command.command import MoveCommand
 from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
 from gameobj.actorgobj import Actor
@@ -35,6 +36,7 @@ class ActorTurn:
 
 class OrderedQueue:
     def __init__(self, *, data: List[Any] = None, key: Callable[[Any], Any] = None):
+        self.__counter = 0
         if data is not None:
             self.data = data
         else:
@@ -42,12 +44,14 @@ class OrderedQueue:
         if key is not None:
             if callable(key):
                 self.compare = key
+                self.__key = lambda x: (self.compare(x[0]), x[1])
             else:
                 raise AttributeError('order is not callable')
-        self.data.sort(key=self.compare)
+        self.data.sort(key=self.__key)
 
     def add_item(self, item) -> None:
-        self.data.append(item)
+        self.data.append((item, self.__counter))
+        self.__counter += 1
         self._sort()
 
     def top_item(self) -> Any:
@@ -71,11 +75,10 @@ class OrderedQueue:
         raise NotImplementedError('ALARM!')
 
 
-class AIFaceRoll:
-    pass
-
-
 if __name__ == '__main__':
+
+    """TODO: Decoupling event application form Actors"""
+
     pygame.init()
     clock = pygame.time.Clock()
 
@@ -114,9 +117,12 @@ if __name__ == '__main__':
         colors.BLACK_GREY,
         colors.TRANSPARENT_COLOR
     )
+    ai_com_chan = AICommandChannel(SimpleAgressiveAI(None))
+    dragon = Actor(Vec2i(10, 18), ActorStand(), ai_com_chan, d_spr)
 
     ACTORS = list()
     ACTORS.append(main_hero)
+    ACTORS.append(dragon)
 
     moves_queue = OrderedQueue(key=lambda x: x[1])
     for actor in ACTORS:
@@ -129,7 +135,10 @@ if __name__ == '__main__':
         # print('still_have_ticks: {}'.format(time_begin - time_end))
         # print(time_begin)
 
-        curr_actor = moves_queue.top_item()[0]
+        if pygame.event.get([pygame.QUIT]):
+            break
+
+        curr_actor = moves_queue.top_item()[0][0]
         if curr_actor.ready_to_move():
             command = curr_actor.request_command()
             if isinstance(command, MoveCommand):
@@ -152,12 +161,10 @@ if __name__ == '__main__':
         # Layer 0
         for ij in tile_map.tiles:
             draw_tile_descartes(tile_map.get_tile(ij).sprite, ij, MAIN_DISPLAY)
-
         draw_tile_descartes(main_hero.sprite, main_hero.pos, MAIN_DISPLAY)
         # Layer 1
         for ij in dots.tiles:
             draw_tile_descartes(dots.get_tile(ij).sprite, ij, MAIN_DISPLAY)
-
         for actor in ACTORS:
             draw_tile_descartes(actor.sprite, actor.get_pos(), MAIN_DISPLAY)
 

@@ -13,8 +13,13 @@ class MoveCommand(Command):
         self.dij = dij
 
 
-class MoveOneTile(Enum):
-    UP = MoveCommand(Vec2i(0, 1))
-    DOWN = MoveCommand(Vec2i(0, -1))
-    LEFT = MoveCommand(Vec2i(-1, 0))
-    RIGHT = MoveCommand(Vec2i(1, 0))
+MOVE_ONE_TILE = {
+    'UP': MoveCommand(Vec2i(0, 1)),
+    'DOWN': MoveCommand(Vec2i(0, -1)),
+    'LEFT': MoveCommand(Vec2i(-1, 0)),
+    'RIGHT': MoveCommand(Vec2i(1, 0))
+}
+
+
+if __name__ == '__main__':
+    pass
