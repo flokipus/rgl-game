@@ -1,23 +1,22 @@
 import pygame
 import time
 
+
 USER_KEYBOARD_EVENTS = [pygame.KEYDOWN, pygame.KEYUP]
 
 
 class UserKeyboardProcessor:
-    def __init__(self, delay):
+    def __init__(self, delay: float = 0.6):
         self.__last_pressed_key = None
         self.__time_press = 0.0
         self.__delay = delay
         self.__flag_first_time_process = True
 
-    def process_input(self, pyg_events):
+    def process_input(self):
         """
         Передавать только эвенты, которые отвечают keyboard
         """
-        for event in pyg_events:
-            if event.type not in USER_KEYBOARD_EVENTS:
-                raise RuntimeError
+        for event in pygame.event.get(USER_KEYBOARD_EVENTS):
             self._process_key_event(event)
         return self._final_key()
 

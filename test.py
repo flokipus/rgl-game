@@ -1,16 +1,18 @@
 from __future__ import annotations
 import pygame
 from typing import List, Callable, Any
+from collections import namedtuple
 
+from command.command_channel import UICommandChannel
+from command.command import MoveCommand
 from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
+from gameobj.actorgobj import Actor
+from gameobj.states import ActorStand
 from map.tilemaps import test_tile_map, TileMap, Tile, draw_tile_descartes
 from settings import colors
 from settings.screen import FONT_SIZE, CELL_SIZE, SCREEN_SIZE
 from utils.utils import Vec2i
-from gameobj.actorgobj import Actor
-from gameobj.states import ActorStand
-from user_input.keyboard_processor import UserKeyboardProcessor, USER_KEYBOARD_EVENTS
-from command.command import MoveCommand, Command
+from user_input.keyboard_processor import UserKeyboardProcessor
 
 
 class ActorTurn:
@@ -32,14 +34,14 @@ class ActorTurn:
 
 
 class OrderedQueue:
-    def __init__(self, *, data: List[Any] = None, compare: Callable[[Any], Any] = None):
+    def __init__(self, *, data: List[Any] = None, key: Callable[[Any], Any] = None):
         if data is not None:
             self.data = data
         else:
             self.data = []
-        if compare is not None:
-            if callable(compare):
-                self.compare = compare
+        if key is not None:
+            if callable(key):
+                self.compare = key
             else:
                 raise AttributeError('order is not callable')
         self.data.sort(key=self.compare)
@@ -69,6 +71,10 @@ class OrderedQueue:
         raise NotImplementedError('ALARM!')
 
 
+class AIFaceRoll:
+    pass
+
+
 if __name__ == '__main__':
     pygame.init()
     clock = pygame.time.Clock()
@@ -90,16 +96,13 @@ if __name__ == '__main__':
 
     time_end = pygame.time.get_ticks()
 
-
-
-    input_queue = list()
-
     m_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
         '@',
         colors.WHITE,
         colors.TRANSPARENT_COLOR
     )
-    main_hero = Actor(Vec2i(8, 18), ActorStand(), input_queue, m_spr)
+    input_channel = UICommandChannel(UserKeyboardProcessor(delay=0.3))
+    main_hero = Actor(Vec2i(8, 18), ActorStand(), input_channel, m_spr)
 
     d_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
         'D',
@@ -115,38 +118,18 @@ if __name__ == '__main__':
     ACTORS = list()
     ACTORS.append(main_hero)
 
-    moves_queue = list()
+    moves_queue = OrderedQueue(key=lambda x: x[1])
     for actor in ACTORS:
-        moves_queue.append(actor)
+        moves_queue.add_item((actor, 0))
 
     EVENT_QUEUE = []
-
-    user_input_proc = UserKeyboardProcessor(0.3)
-    MOVE_KEYS = {pygame.K_w, pygame.K_UP, pygame.K_s, pygame.K_DOWN, pygame.K_a, pygame.K_LEFT, pygame.K_d,
-                 pygame.K_RIGHT}
     while True:
         # print('------')
         time_begin = pygame.time.get_ticks()
         # print('still_have_ticks: {}'.format(time_begin - time_end))
         # print(time_begin)
 
-        ckey = user_input_proc.process_input(pygame.event.get(USER_KEYBOARD_EVENTS))
-        if ckey in MOVE_KEYS:
-            print('Move keys')
-            di, dj = 0, 0
-            if ckey in {pygame.K_UP, pygame.K_w}:
-                dj = 1
-            elif ckey in {pygame.K_DOWN, pygame.K_s}:
-                dj = -1
-            elif ckey in {pygame.K_LEFT, pygame.K_a}:
-                di = -1
-            elif ckey in {pygame.K_RIGHT, pygame.K_d}:
-                di = 1
-            input_queue.append(MoveCommand(Vec2i(di, dj)))
-        if ckey == pygame.K_ESCAPE:
-            input_queue.clear()
-
-        curr_actor = moves_queue[0]
+        curr_actor = moves_queue.top_item()[0]
         if curr_actor.ready_to_move():
             command = curr_actor.request_command()
             if isinstance(command, MoveCommand):
@@ -155,22 +138,22 @@ if __name__ == '__main__':
                 target_tile = tile_map.get_tile(next_pos)
                 if target_tile is not None and target_tile.can_move():
                     # APPLY COMMAND
-                    moves_queue.pop(0)
+                    moves_queue.pop_item()
                     curr_actor.handle_command()
-                    moves_queue.append(curr_actor)
+                    moves_queue.add_item((curr_actor, 0))
                     EVENT_QUEUE.append((curr_actor, command))
                     pass
 
         for actor in ACTORS:
             actor.update()
 
+        ### DRAWING ###
         MAIN_DISPLAY.fill(colors.BLACK)
         # Layer 0
         for ij in tile_map.tiles:
             draw_tile_descartes(tile_map.get_tile(ij).sprite, ij, MAIN_DISPLAY)
 
         draw_tile_descartes(main_hero.sprite, main_hero.pos, MAIN_DISPLAY)
-
         # Layer 1
         for ij in dots.tiles:
             draw_tile_descartes(dots.get_tile(ij).sprite, ij, MAIN_DISPLAY)
