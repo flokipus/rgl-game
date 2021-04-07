@@ -4,7 +4,7 @@ import pygame
 
 from command.command import Command, MoveCommand
 from gameobj.basegobj import GameObject
-from utils.utils import Vec2i
+from utils.utils import Vec2
 
 
 class BaseState:
@@ -41,7 +41,7 @@ class BaseState:
         return True
 
 
-class ActorStand(BaseState):
+class Standing(BaseState):
     def __init__(self):
         pass
 
@@ -50,7 +50,7 @@ class ActorStand(BaseState):
 
     def handle_command(self, *, gobj: GameObject, command: Command) -> Union[None, BaseState]:
         if isinstance(command, MoveCommand):
-            return ActorMove(command.dij)
+            return Moving(command.dij)
         else:
             return None
 
@@ -61,8 +61,8 @@ class ActorStand(BaseState):
         return None
 
 
-class ActorMove(BaseState):
-    def __init__(self, dij: Vec2i, time_to_move: float = 0.3):
+class Moving(BaseState):
+    def __init__(self, dij: Vec2, time_to_move: float = 0.3):
         self.ij_from = None
         self.dij = dij
         self.time_to_move = time_to_move
@@ -78,7 +78,7 @@ class ActorMove(BaseState):
         new_pos = self.ij_from + self.dij * delta_time / self.time_to_move
         gobj.set_pos(new_pos)
         if delta_time == self.time_to_move:
-            return ActorStand()
+            return Standing()
         else:
             return None
 

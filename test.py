@@ -3,16 +3,17 @@ import pygame
 from typing import List, Callable, Any
 from collections import namedtuple
 
-from ai.aiprocessor import SimpleAgressiveAI
+from ai.aiprocessor import SimpleAgressiveAI, RandomMoveAI
+from command.command import MoveCommand, Command, MOVE_ONE_TILE
 from command.command_channel import UICommandChannel, AICommandChannel
-from command.command import MoveCommand
 from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
+from gameobj.basegobj import GameObject
 from gameobj.actorgobj import Actor
-from gameobj.states import ActorStand
+import gameobj.states as states
 from map.tilemaps import test_tile_map, TileMap, Tile, draw_tile_descartes
 from settings import colors
 from settings.screen import FONT_SIZE, CELL_SIZE, SCREEN_SIZE
-from utils.utils import Vec2i
+from utils.utils import Vec2
 from user_input.keyboard_processor import UserKeyboardProcessor
 
 
@@ -56,7 +57,8 @@ class OrderedQueue:
 
     def top_item(self) -> Any:
         """Return the smallest item in queue"""
-        return self.data[-1]
+        item, counter = self.data[-1]
+        return item
 
     def pop_item(self) -> Any:
         """Remove the smallest item in queue"""
@@ -66,13 +68,58 @@ class OrderedQueue:
         return len(self.data) == 0
 
     def _sort(self):
-        self.data.sort(key=self.compare, reverse=True)
+        """
+        Actual key is this:
+        for item, counter = self.data[0] the key is the tuple
+        (self.compare(item), counter) which is compared lexicographically
+        """
+        self.data.sort(key=self.__key, reverse=True)
+
+    def raw_data(self):
+        return self.data
 
     def clear(self) -> None:
         self.data.clear()
 
+    def get_compare(self):
+        return self.compare
+
     def delete_items(self, compare: Callable[[Any], Any]) -> None:
         raise NotImplementedError('ALARM!')
+
+
+class TurnOrderInTime:
+    def __init__(self):
+        self._data_type = namedtuple('actor_time', ['actor', 'turn_time'])
+        self._move_turns = OrderedQueue(key=lambda x: x['turn_time'])
+
+    def add_turn(self, actor: Actor, turn_time: float) -> None:
+        binding = {'actor': actor, 'turn_time': turn_time}
+        self._move_turns.add_item(binding)
+
+    def pop_actor(self) -> None:
+        binding = self._move_turns.top_item()
+        time_passed = binding['turn_time']
+        raw_data = self._move_turns.raw_data()
+        for binding, counter in raw_data:
+            binding['turn_time'] -= time_passed
+        self._move_turns.pop_item()
+
+    def top_actor(self) -> Actor:
+        """Just look at current actor"""
+        binding = self._move_turns.top_item()
+        return binding['actor']
+
+    def remove_actor(self, actor: Actor) -> None:
+        self.remove_actor_by_id(actor.get_gobj().id)
+
+    def remove_actor_by_id(self, gobj_id: int) -> None:
+        raw_data = self._move_turns.raw_data()
+        for i, (binding, counter) in enumerate(raw_data):
+            gobj: GameObject = binding['actor'].get_gobj()
+            if gobj.id == gobj_id:
+                raw_data.pop(i)
+                break
 
 
 if __name__ == '__main__':
@@ -105,30 +152,40 @@ if __name__ == '__main__':
         colors.TRANSPARENT_COLOR
     )
     input_channel = UICommandChannel(UserKeyboardProcessor(delay=0.3))
-    main_hero = Actor(Vec2i(8, 18), ActorStand(), input_channel, m_spr)
+    main_hero = GameObject(pos=Vec2(8, 18), name='main_char', sprite=m_spr)
+    main_hero_actor = Actor(main_hero, states.Standing(), input_channel)
 
     d_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
         'D',
         colors.BLUE,
         colors.TRANSPARENT_COLOR
     )
+    dragon_gobj = GameObject(pos=Vec2(10, 18), name='dragon', sprite=d_spr)
+    ai_com_chan = AICommandChannel(RandomMoveAI())
+    dragon_actor = Actor(dragon_gobj, states.Standing(), ai_com_chan)
+
     n_spr = AsciiCellCreator(pygame.font.Font(None, FONT_SIZE), CELL_SIZE).create(
         '@',
         colors.BLACK_GREY,
         colors.TRANSPARENT_COLOR
     )
-    ai_com_chan = AICommandChannel(SimpleAgressiveAI(None))
-    dragon = Actor(Vec2i(10, 18), ActorStand(), ai_com_chan, d_spr)
+    necro_gobj = GameObject(pos=Vec2(12, 18), name='necromancer', sprite=n_spr)
+    necro_actor = Actor(necro_gobj, states.Standing(), ai_com_chan)
 
-    ACTORS = list()
-    ACTORS.append(main_hero)
-    ACTORS.append(dragon)
+    ACTORS = set()
+    ACTORS.add(dragon_actor)
+    ACTORS.add(main_hero_actor)
+    ACTORS.add(necro_actor)
 
-    moves_queue = OrderedQueue(key=lambda x: x[1])
+    USER_ACTOR = {main_hero_actor}
+
+    turns_queue = TurnOrderInTime()
     for actor in ACTORS:
-        moves_queue.add_item((actor, 0))
+        turns_queue.add_turn(actor, 0)
 
     EVENT_QUEUE = []
+    MOVING_NOW = set()
+    allow_next_actor = False
     while True:
         # print('------')
         time_begin = pygame.time.get_ticks()
@@ -138,20 +195,60 @@ if __name__ == '__main__':
         if pygame.event.get([pygame.QUIT]):
             break
 
-        curr_actor = moves_queue.top_item()[0][0]
-        if curr_actor.ready_to_move():
-            command = curr_actor.request_command()
-            if isinstance(command, MoveCommand):
-                cur_pos = curr_actor.get_pos()
-                next_pos = cur_pos + command.dij
-                target_tile = tile_map.get_tile(next_pos)
-                if target_tile is not None and target_tile.can_move():
-                    # APPLY COMMAND
-                    moves_queue.pop_item()
-                    curr_actor.handle_command()
-                    moves_queue.add_item((curr_actor, 0))
-                    EVENT_QUEUE.append((curr_actor, command))
-                    pass
+        to_delete = []
+        for actor in MOVING_NOW:
+            if isinstance(actor.get_state(), states.Standing):
+                to_delete.append(actor)
+        for actor in to_delete:
+            MOVING_NOW.remove(actor)
+        to_delete.clear()
+
+        if len(MOVING_NOW) == 0:
+            allow_next_actor = True
+        else:
+            allow_next_actor = False
+
+        if allow_next_actor:
+            actor: Actor = turns_queue.top_actor()
+            if actor not in MOVING_NOW:
+                command = actor.request_command()
+                if actor == main_hero_actor:
+                    if command is None:
+                        pass  # wait input
+                    elif isinstance(command, MoveCommand):
+                        gobj = actor.get_gobj()
+                        cur_pos = gobj.get_pos()
+                        next_pos = cur_pos + command.dij
+                        target_tile = tile_map.get_tile(next_pos)
+                        if target_tile is not None:
+                            time_cost = target_tile.move_cost()
+                            EVENT_QUEUE.append((actor, command, time_cost))
+                        else:
+                            pass
+                else:
+                    # NPC case is here!
+                    if command is None:
+                        command = MOVE_ONE_TILE['WAIT']
+                    if isinstance(command, MoveCommand):
+                        gobj = actor.get_gobj()
+                        cur_pos = gobj.get_pos()
+                        next_pos = cur_pos + command.dij
+                        target_tile = tile_map.get_tile(next_pos)
+                        if target_tile is None:
+                            command = MOVE_ONE_TILE['WAIT']
+                            time_cost = tile_map.get_tile(cur_pos).move_cost()
+                        else:
+                            time_cost = target_tile.move_cost()
+                        EVENT_QUEUE.append((actor, command, time_cost))
+
+        # Apply events
+        for event in EVENT_QUEUE:
+            actor, command, time_cost = event
+            actor.handle_command(command)
+            MOVING_NOW.add(actor)
+            turns_queue.remove_actor(actor)
+            turns_queue.add_turn(actor, time_cost)
+        EVENT_QUEUE.clear()
 
         for actor in ACTORS:
             actor.update()
@@ -166,7 +263,8 @@ if __name__ == '__main__':
         for ij in dots.tiles:
             draw_tile_descartes(dots.get_tile(ij).sprite, ij, MAIN_DISPLAY)
         for actor in ACTORS:
-            draw_tile_descartes(actor.sprite, actor.get_pos(), MAIN_DISPLAY)
+            gobj = actor.get_gobj()
+            draw_tile_descartes(gobj.sprite, gobj.get_pos(), MAIN_DISPLAY)
 
         pygame.display.update()
 

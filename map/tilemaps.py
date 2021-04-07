@@ -4,13 +4,13 @@ from typing import overload, Union
 from collections import namedtuple
 from queue import Queue
 
-from utils.utils import Vec2i
+from utils.utils import Vec2
 from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
 from settings.screen import FONT_SIZE, CELL_SIZE, SCREEN_SIZE, CELL_HEIGHT, CELL_WIDTH
 from settings import colors
 
 
-def to_pixel_xy(xy: Vec2i, screen_height) -> tuple:
+def to_pixel_xy(xy: Vec2, screen_height) -> tuple:
     x = xy[0]
     y = screen_height - xy[1]
     return x, y
@@ -21,16 +21,11 @@ class Tile:
         self.sprite = sprite
 
     @overload
-    def speed_factor(self) -> float: ...
+    def move_cost(self) -> float: ...
 
-    @overload
-    def can_move(self) -> bool: ...
-
-    def speed_factor(self) -> float:
-        return 1.0
-
-    def can_move(self) -> bool:
-        return True
+    def move_cost(self) -> float:
+        """Default cost"""
+        return 100.0
 
     @classmethod
     def empty_tile(cls):
@@ -46,13 +41,13 @@ class TileMap:
         else:
             raise AttributeError('Wrong tiles container type. Expected dict, given is {}'.format(type(input_tiles)))
 
-    def get_tile(self, ij: Vec2i) -> Union[None, Tile]:
+    def get_tile(self, ij: Vec2) -> Union[None, Tile]:
         if ij in self.tiles:
             return self.tiles[ij]
         else:
             return None
 
-    def set_tile(self, ij: Vec2i, tile: Tile) -> None:
+    def set_tile(self, ij: Vec2, tile: Tile) -> None:
         self.tiles[ij] = tile
 
     def to_surface(self) -> pygame.Surface:
@@ -64,20 +59,20 @@ class TileMap:
         surface = pygame.Surface(surf_size)
         for ij in self.tiles:
             tile = self.tiles[ij]
-            pose = ij - Vec2i(min_i, min_j)
+            pose = ij - Vec2(min_i, min_j)
             draw_tile_descartes(tile.sprite, pose, surface)
         return surface
 
 
-def draw_surf_descartes(what_to_draw: pygame.Surface, pos_left_bot: Vec2i, where_to_draw: pygame.Surface):
+def draw_surf_descartes(what_to_draw: pygame.Surface, pos_left_bot: Vec2, where_to_draw: pygame.Surface):
     size = where_to_draw.get_size()
     xy = to_pixel_xy(pos_left_bot, size[1])
     xy = xy[0], xy[1] - what_to_draw.get_size()[1]
     where_to_draw.blit(what_to_draw, xy)
 
 
-def draw_tile_descartes(what_to_draw: pygame.Surface, ij: Vec2i, where_to_draw: pygame.Surface):
-    draw_surf_descartes(what_to_draw, ij.dot(Vec2i(CELL_WIDTH, CELL_HEIGHT)), where_to_draw)
+def draw_tile_descartes(what_to_draw: pygame.Surface, ij: Vec2, where_to_draw: pygame.Surface):
+    draw_surf_descartes(what_to_draw, ij.dot(Vec2(CELL_WIDTH, CELL_HEIGHT)), where_to_draw)
 
 
 def test_tile_map():
@@ -86,10 +81,10 @@ def test_tile_map():
     desert_cell_sprite.fill(colors.SAND)
     for i in range(8, 15):
         for j in range(18, 23):
-            tiles.set_tile(Vec2i(i, j), Tile(desert_cell_sprite))
+            tiles.set_tile(Vec2(i, j), Tile(desert_cell_sprite))
     for i in range(15, 20):
-        tiles.set_tile(Vec2i(i, 18), Tile(desert_cell_sprite))
+        tiles.set_tile(Vec2(i, 18), Tile(desert_cell_sprite))
     for i in range(20, 24):
         for j in range(8, 19):
-            tiles.set_tile(Vec2i(i, j), Tile(desert_cell_sprite))
+            tiles.set_tile(Vec2(i, j), Tile(desert_cell_sprite))
     return tiles

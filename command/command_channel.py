@@ -25,6 +25,7 @@ class UICommandChannel(CommandChannel):
                          pygame.K_DOWN: MOVE_ONE_TILE['DOWN'], pygame.K_s: MOVE_ONE_TILE['DOWN'],
                          pygame.K_LEFT: MOVE_ONE_TILE['LEFT'], pygame.K_a: MOVE_ONE_TILE['LEFT'],
                          pygame.K_RIGHT: MOVE_ONE_TILE['RIGHT'], pygame.K_d: MOVE_ONE_TILE['RIGHT'],
+                         pygame.K_SPACE: MOVE_ONE_TILE['WAIT'],
                          None: None}
 
     def request_command(self) -> Union[None, Command]:
