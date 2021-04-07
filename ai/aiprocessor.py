@@ -1,6 +1,6 @@
 from typing import overload, Union
 
-from command.command import Command
+from command.command import Command, MOVE_ONE_TILE
 
 
 class AIProcessor:
@@ -8,7 +8,7 @@ class AIProcessor:
     def process_context(self) -> Union[None, Command]: ...
 
     def process_context(self) -> Union[None, Command]:
-        return None
+        return MOVE_ONE_TILE['UP']
 
 
 class SimpleAgressiveAI(AIProcessor):
