@@ -8,6 +8,14 @@ class Command:
     pass
 
 
+class ExitCommand(Command):
+    pass
+
+
+class SaveAndExitCommand(Command):
+    pass
+
+
 class MoveCommand(Command):
     def __init__(self, dij: Vec2):
         self.dij = dij

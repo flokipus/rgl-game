@@ -4,7 +4,7 @@ from typing import Union, overload
 
 from gameobj.states import BaseState
 from gameobj.basegobj import GameObject
-from command.command_channel import Command, CommandChannel
+from command.command_channel import Command, CommandChannel, UserCommandChannel
 
 
 class Actor:
@@ -65,3 +65,6 @@ class Actor:
 
     def ready_to_move(self) -> bool:
         return self._state.ready()
+
+    def controlled_by_player(self) -> bool:
+        return isinstance(self._command_channel, UserCommandChannel)

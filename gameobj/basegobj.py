@@ -12,8 +12,8 @@ class GameObject:
     __class_id_counter = 0
 
     def __init__(self, *, pos: Vec2, name: str = '', sprite: Union[None, pygame.Surface] = None):
-        self.pos = pos
-        self.sprite = sprite
+        self._pos = pos
+        self._sprite = sprite
         self.name = name
         self.__id = GameObject.__class_id_counter
         GameObject.__class_id_counter += 1
@@ -28,28 +28,19 @@ class GameObject:
     def id(self) -> int:
         return self.__id
 
-    @overload
-    def update(self) -> None: ...
-
-    @overload
-    def get_pos(self) -> Vec2: ...
-
-    @overload
-    def set_pos(self, new_pos: Vec2) -> None: ...
-
-    @overload
-    def get_sprite(self) -> pygame.Surface: ...
-
     """Implementation block
     """
     def update(self) -> None:
         pass
 
     def get_pos(self) -> Vec2:
-        return self.pos
+        return self._pos
 
     def set_pos(self, new_pos: Vec2) -> None:
-        self.pos = new_pos
+        self._pos = new_pos
 
     def get_sprite(self) -> pygame.Surface:
-        return self.sprite
+        return self._sprite
+
+    def set_sprite(self, new_sprite: pygame.Surface) -> None:
+        self._sprite = new_sprite

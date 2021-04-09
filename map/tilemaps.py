@@ -1,12 +1,10 @@
 from __future__ import annotations
 import pygame
-from typing import overload, Union
-from collections import namedtuple
-from queue import Queue
+from typing import overload, Union, Dict, List, ValuesView
 
+from gameobj.basegobj import GameObject
 from utils.utils import Vec2
-from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
-from settings.screen import FONT_SIZE, CELL_SIZE, SCREEN_SIZE, CELL_HEIGHT, CELL_WIDTH
+from settings.screen import CELL_SIZE, CELL_HEIGHT, CELL_WIDTH
 from settings import colors
 
 
@@ -16,9 +14,9 @@ def to_pixel_xy(xy: Vec2, screen_height) -> tuple:
     return x, y
 
 
-class Tile:
-    def __init__(self, sprite: pygame.Surface):
-        self.sprite = sprite
+class Tile(GameObject):
+    def __init__(self, *, pos: Vec2, name: str = '', sprite: Union[None, pygame.Surface] = None):
+        GameObject.__init__(self, pos=pos, name=name, sprite=sprite)
 
     @overload
     def move_cost(self) -> float: ...
@@ -28,12 +26,12 @@ class Tile:
         return 100.0
 
     @classmethod
-    def empty_tile(cls):
-        return Tile(pygame.Surface((CELL_WIDTH, CELL_HEIGHT)))
+    def empty_tile(cls, pos: Vec2 = Vec2(0, 0), name: str = ''):
+        return Tile(pos=pos, name=name, sprite=pygame.Surface((CELL_WIDTH, CELL_HEIGHT)))
 
 
 class TileMap:
-    def __init__(self, input_tiles: Union[None, dict] = None):
+    def __init__(self, input_tiles: Union[None, Dict[Vec2, Tile]] = None):
         if input_tiles is None:
             self.tiles = dict()
         elif isinstance(input_tiles, dict):
@@ -48,20 +46,28 @@ class TileMap:
             return None
 
     def set_tile(self, ij: Vec2, tile: Tile) -> None:
+        if tile.get_pos() != ij:
+            tile.set_pos(ij)
         self.tiles[ij] = tile
 
-    def to_surface(self) -> pygame.Surface:
-        """TODO: write more optimal traversy over map
-        """
-        max_i, min_i = max([ij[0] for ij in self.tiles.keys()]), min([ij[0] for ij in self.tiles.keys()])
-        max_j, min_j = max([ij[1] for ij in self.tiles.keys()]), min([ij[1] for ij in self.tiles.keys()])
-        surf_size = CELL_WIDTH * (max_i - min_i + 1), CELL_HEIGHT * (max_j - min_j + 1)
-        surface = pygame.Surface(surf_size)
-        for ij in self.tiles:
-            tile = self.tiles[ij]
-            pose = ij - Vec2(min_i, min_j)
-            draw_tile_descartes(tile.sprite, pose, surface)
-        return surface
+    def get_all_tiles(self) -> ValuesView[Tile]:
+        return self.tiles.values()
+
+    # def to_surface(self) -> pygame.Surface:
+    #     """TODO: write more optimal traversy over map
+    #     """
+    #     max_i, min_i = max([ij[0] for ij in self.tiles.keys()]), min([ij[0] for ij in self.tiles.keys()])
+    #     max_j, min_j = max([ij[1] for ij in self.tiles.keys()]), min([ij[1] for ij in self.tiles.keys()])
+    #     surf_size = CELL_WIDTH * (max_i - min_i + 1), CELL_HEIGHT * (max_j - min_j + 1)
+    #     surface = pygame.Surface(surf_size)
+    #     for ij in self.tiles:
+    #         tile = self.tiles[ij]
+    #         pose = ij - Vec2(min_i, min_j)
+    #         draw_tile_descartes(tile.get_sprite(), pose, surface)
+    #     return surface
+
+    def copy(self) -> TileMap:
+        return TileMap(self.tiles.copy())
 
 
 def draw_surf_descartes(what_to_draw: pygame.Surface, pos_left_bot: Vec2, where_to_draw: pygame.Surface):
@@ -81,10 +87,13 @@ def test_tile_map():
     desert_cell_sprite.fill(colors.SAND)
     for i in range(8, 15):
         for j in range(18, 23):
-            tiles.set_tile(Vec2(i, j), Tile(desert_cell_sprite))
+            pos = Vec2(i, j)
+            tiles.set_tile(pos, Tile(pos=pos, name='sand_sprite', sprite=desert_cell_sprite))
     for i in range(15, 20):
-        tiles.set_tile(Vec2(i, 18), Tile(desert_cell_sprite))
+        pos = Vec2(i, 18)
+        tiles.set_tile(pos, Tile(pos=pos, name='sand_sprite', sprite=desert_cell_sprite))
     for i in range(20, 24):
         for j in range(8, 19):
-            tiles.set_tile(Vec2(i, j), Tile(desert_cell_sprite))
+            pos = Vec2(i, j)
+            tiles.set_tile(pos, Tile(pos=pos, name='sand_sprite', sprite=desert_cell_sprite))
     return tiles

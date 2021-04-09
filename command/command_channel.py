@@ -17,23 +17,21 @@ class CommandChannel:
         return None
 
 
-class UICommandChannel(CommandChannel):
+class UserCommandChannel(CommandChannel):
     """TODO: Гибкая настройка key_map -> command, обработка gui + mouse"""
-    def __init__(self, kb_processor: UserKeyboardProcessor) -> None:
-        self._kb_proc = kb_processor
-        self._key_map = {pygame.K_UP: MOVE_ONE_TILE['UP'], pygame.K_w: MOVE_ONE_TILE['UP'],
-                         pygame.K_DOWN: MOVE_ONE_TILE['DOWN'], pygame.K_s: MOVE_ONE_TILE['DOWN'],
-                         pygame.K_LEFT: MOVE_ONE_TILE['LEFT'], pygame.K_a: MOVE_ONE_TILE['LEFT'],
-                         pygame.K_RIGHT: MOVE_ONE_TILE['RIGHT'], pygame.K_d: MOVE_ONE_TILE['RIGHT'],
-                         pygame.K_SPACE: MOVE_ONE_TILE['WAIT'],
-                         None: None}
+    def __init__(self) -> None:
+        self.command_buffer = list()
 
     def request_command(self) -> Union[None, Command]:
-        input = self._kb_proc.process_input()
-        try:
-            return self._key_map[input]
-        except KeyError as e:
+        if len(self.command_buffer) == 0:
             return None
+        else:
+            command = self.command_buffer[0]
+            self.command_buffer.pop(0)
+            return command
+
+    def put_command(self, command: Command) -> None:
+        self.command_buffer.append(command)
 
 
 class AICommandChannel(CommandChannel):
