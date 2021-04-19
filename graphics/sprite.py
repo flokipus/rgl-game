@@ -1,6 +1,6 @@
 from pygame import Surface
 
-from utils import Vec2i
+from utils.utils import Vec2i
 
 
 class Sprite:

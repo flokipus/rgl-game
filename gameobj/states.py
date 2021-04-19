@@ -4,7 +4,7 @@ import pygame
 
 from command.command import Command, MoveCommand
 from gameobj.basegobj import GameObject
-from utils.utils import Vec2
+from utils.utils import Vec2i
 
 
 class BaseState:
@@ -62,7 +62,7 @@ class Standing(BaseState):
 
 
 class Moving(BaseState):
-    def __init__(self, dij: Vec2, time_to_move: float = 0.3):
+    def __init__(self, dij: Vec2i, time_to_move: float = 0.3):
         self.ij_from = None
         self.dij = dij
         self.time_to_move = time_to_move

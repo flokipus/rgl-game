@@ -2,7 +2,7 @@ from __future__ import annotations
 import pygame
 from typing import Union, overload
 
-from utils.utils import Vec2
+from utils.utils import Vec2i
 
 
 class GameObject:
@@ -11,7 +11,7 @@ class GameObject:
 
     __class_id_counter = 0
 
-    def __init__(self, *, pos: Vec2, name: str = '', sprite: Union[None, pygame.Surface] = None):
+    def __init__(self, *, pos: Vec2i, name: str = '', sprite: Union[None, pygame.Surface] = None):
         self._pos = pos
         self._sprite = sprite
         self.name = name
@@ -33,10 +33,10 @@ class GameObject:
     def update(self) -> None:
         pass
 
-    def get_pos(self) -> Vec2:
+    def get_pos(self) -> Vec2i:
         return self._pos
 
-    def set_pos(self, new_pos: Vec2) -> None:
+    def set_pos(self, new_pos: Vec2i) -> None:
         self._pos = new_pos
 
     def get_sprite(self) -> pygame.Surface:
