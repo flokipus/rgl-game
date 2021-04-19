@@ -44,14 +44,13 @@ Model ----> List[Event] ----> View
 Чтобы этого не было можно сделать так: у Controller будет ассоциативный массив, ключи которого -- команды View ("MoveRight", "MoveLeft", ...), а значениями будут являться callback-и. Эти коллбеки будут реализацией соответствующего command2event. На вход такой callback должен будет получить Model и gameobject, которому этот callback адресован (в рассмотренном нами примере, это пользовательский персонаж; но точно также можно применить этот подход и для npc, просто команды будет поставлять не View, а соответствующий AI (и не через контроллер, само собой)).
 
 Итого, псевдокодом:
-
+```
 user_command = View.get_user_command()
-
 backend_command = Controller.backend_commands\[user_command\]
-
 Model.handle_command(backend_command),
-
+```
 где
-
+```
 class BackendCommand:
   def command2event(self, model: Model, gobj: GameObject) -> List\[Event\]: ...
+ ```
