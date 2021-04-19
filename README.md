@@ -46,5 +46,7 @@ Model ----> List[Event] ----> View
 Итого, псевдокодом:
 
 user_command = View.get_user_command()
+
 backend_command = Controller.backend_commands\[user_command\]
+
 Model.handle_user_command(backend_command)
