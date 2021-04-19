@@ -49,4 +49,9 @@ user_command = View.get_user_command()
 
 backend_command = Controller.backend_commands\[user_command\]
 
-Model.handle_user_command(backend_command)
+Model.handle_command(backend_command),
+
+где
+
+class BackendCommand:
+  def command2event(self, model: Model, gobj: GameObject) -> List\[Event\]: ...
