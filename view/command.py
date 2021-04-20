@@ -1,22 +1,19 @@
-from typing import overload, Union
-from enum import Enum
-
 from utils.utils import Vec2i
 
 
-class Command:
+class ViewCommand:
     pass
 
 
-class ExitCommand(Command):
+class ExitCommand(ViewCommand):
     pass
 
 
-class SaveAndExitCommand(Command):
+class SaveAndExitCommand(ViewCommand):
     pass
 
 
-class MoveCommand(Command):
+class MoveCommand(ViewCommand):
     def __init__(self, dij: Vec2i):
         self.dij = dij
 
@@ -28,7 +25,3 @@ MOVE_ONE_TILE = {
     'RIGHT': MoveCommand(Vec2i(1, 0)),
     'WAIT': MoveCommand(Vec2i(0, 0))
 }
-
-
-if __name__ == '__main__':
-    pass

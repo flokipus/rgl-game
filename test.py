@@ -1,124 +1,19 @@
 from __future__ import annotations
 import pygame
 from time import time
-from typing import List, Callable, Any, Set, Union, Tuple, Dict, KeysView, overload
+from typing import List, Callable, Any, Union, Tuple, overload
 from collections import namedtuple
 
-from ai.aiprocessor import SimpleAgressiveAI, RandomMoveAI
-from command.command import MoveCommand, Command, MOVE_ONE_TILE, ExitCommand
-from command.command_channel import UserCommandChannel, AICommandChannel, CommandChannel
+from model.ai import RandomMoveAI
+from command.command import Command, MOVE_ONE_TILE, ExitCommand
+from model.command_channel import UserCommandChannel, AICommandChannel
 from graphics.cell_sprites.sprite_ascii import AsciiCellCreator
 from gameobj.basegobj import GameObject
-from map.tilemaps import test_tile_map, TileMap, Tile
+from map.tilemaps import test_tile_map, Tile
 from settings import colors
 from settings.screen import FONT_SIZE, CELL_SIZE, SCREEN_SIZE
 from utils.utils import Vec2i
 from user_input.keyboard_processor import UserKeyboardProcessor
-
-
-class ActorTurn:
-    def __init__(self, actor, rest_time):
-        self.actor = actor
-        self.rest_time = rest_time
-
-    def __le__(self, other: ActorTurn) -> bool:
-        return self.rest_time <= other.rest_time
-
-    def __lt__(self, other: ActorTurn) -> bool:
-        return self.rest_time < other.rest_time
-
-    def __ge__(self, other: ActorTurn) -> bool:
-        return self.rest_time >= other.rest_time
-
-    def __gt__(self, other: ActorTurn) -> bool:
-        return self.rest_time > other.rest_time
-
-
-class OrderedQueue:
-    def __init__(self, *, data: List[Any] = None, key: Callable[[Any], Any] = None):
-        self.__counter = 0
-        if data is not None:
-            self.data = data
-        else:
-            self.data = []
-        if key is not None:
-            if callable(key):
-                self.compare = key
-                self.__key = lambda x: (self.compare(x[0]), x[1])
-            else:
-                raise AttributeError('order is not callable')
-        self.data.sort(key=self.__key)
-
-    def add_item(self, item) -> None:
-        self.data.append((item, self.__counter))
-        self.__counter += 1
-        self._sort()
-
-    def top_item(self) -> Any:
-        """Return the smallest item in queue"""
-        item, counter = self.data[-1]
-        return item
-
-    def pop_item(self) -> Any:
-        """Remove the smallest item in queue"""
-        return self.data.pop(-1)
-
-    def empty(self) -> bool:
-        return len(self.data) == 0
-
-    def _sort(self):
-        """
-        Actual key is this:
-        for item, counter = self.data[0] the key is the tuple
-        (self.compare(item), counter) which is compared lexicographically
-        """
-        self.data.sort(key=self.__key, reverse=True)
-
-    def raw_data(self):
-        return self.data
-
-    def clear(self) -> None:
-        self.data.clear()
-
-    def get_compare(self):
-        return self.compare
-
-    def delete_items(self, compare: Callable[[Any], Any]) -> None:
-        raise NotImplementedError('ALARM!')
-
-
-class TurnOrderInTime:
-    def __init__(self):
-        self._data_type = namedtuple('actor_time', ['actor', 'turn_time'])
-        self._move_turns = OrderedQueue(key=lambda x: x['turn_time'])
-
-    def add_turn(self, actor: GameObject, turn_time: float) -> None:
-        binding = {'actor': actor, 'turn_time': turn_time}
-        self._move_turns.add_item(binding)
-
-    def pop_actor(self) -> None:
-        binding = self._move_turns.top_item()
-        time_passed = binding['turn_time']
-        raw_data = self._move_turns.raw_data()
-        for binding, counter in raw_data:
-            binding['turn_time'] -= time_passed
-        self._move_turns.pop_item()
-
-    def top_actor(self) -> GameObject:
-        """Just look at current actor"""
-        binding = self._move_turns.top_item()
-        return binding['actor']
-
-    def remove_actor(self, actor: GameObject) -> None:
-        self.remove_actor_by_id(actor.id)
-
-    def remove_actor_by_id(self, gobj_id: int) -> None:
-        raw_data = self._move_turns.raw_data()
-        for i, (binding, counter) in enumerate(raw_data):
-            gobj: GameObject = binding['actor']
-            if gobj.id == gobj_id:
-                raw_data.pop(i)
-                break
 
 
 class Event:
@@ -152,134 +47,6 @@ class CommandWithCost:
         self.cost = cost
 
 
-class StateOfThings:
-    """C-like structure"""
-    def __init__(self, actors: Dict[GameObject, CommandChannel], tile_map: TileMap):
-        self._actors = actors
-        self._tile_map = tile_map
-
-    def swap(self, other: StateOfThings) -> None:
-        self._actors, other._actors = other._actors, self._actors
-        self._tile_map, other._tile_map = other._tile_map, self._tile_map
-
-    def get_tiles(self) -> Set[GameObject]:
-        return set(self._tile_map.get_all_tiles())
-
-    def get_actors(self) -> KeysView[GameObject]:
-        return self._actors.keys()
-
-    def get_all_gobjects(self) -> Set[GameObject]:
-        result = set()
-        for actor in self._actors:
-            result.add(actor)
-        for tile in self._tile_map.get_all_tiles():
-            result.add(tile)
-        return result
-
-    def copy(self) -> StateOfThings:
-        return StateOfThings(self._actors.copy(), self._tile_map.copy())
-
-    @property
-    def actors(self) -> Dict[GameObject, CommandChannel]:
-        return self._actors
-
-    def apply_event(self, event: Event) -> None:
-        if isinstance(event, GobjDoNothingEvent):
-            pass
-        elif isinstance(event, MoveGobjEvent):
-            gobj = event.gobj
-            gobj.set_pos(event.ij_after)
-
-
-class ModelGame:
-    def __init__(self, actors: Dict[GameObject, CommandChannel], tile_map: TileMap,
-                 user_command_channel: UserCommandChannel):
-        self._state_of_things = StateOfThings(actors, tile_map)
-
-        self._turn_queue = TurnOrderInTime()
-
-        for actor in self._state_of_things.get_actors():
-            self._turn_queue.add_turn(actor, 0)
-        self._events_occurred = list()
-        self._user_command_channel = user_command_channel
-
-    def get_actors(self) -> Dict[GameObject, CommandChannel]:
-        return self._state_of_things.actors
-
-    def get_all_gobjs(self) -> Set[GameObject]:
-        total_gobjs = self._state_of_things.get_all_gobjects()
-        return total_gobjs
-
-    def one_turn_tick(self) -> None:
-        """We process first actor in the queue of turns and then continue processing
-        in cycle until first player actor is met"""
-        does_controlled_by_player = False
-        while not does_controlled_by_player:
-            current_actor = self._turn_queue.top_actor()
-            command_channel = self.get_actors()[current_actor]
-            command = command_channel.request_command()
-            if command is None and isinstance(command_channel, UserCommandChannel):
-                break
-            new_events = self._apply_command(command, current_actor)
-            for event in new_events:
-                self._state_of_things.apply_event(event)
-            self._events_occurred += new_events
-            top_actor = self._turn_queue.top_actor()
-            does_controlled_by_player = isinstance(self.get_actors()[top_actor], UserCommandChannel)
-
-    def get_events(self) -> List[Event]:
-        return self._events_occurred
-
-    def put_user_command(self, command: Command) -> None:
-        self._user_command_channel.put_command(command)
-
-    def unload_events(self) -> List[Event]:
-        unloaded = self._events_occurred.copy()
-        self._events_occurred.clear()
-        return unloaded
-
-    def _apply_command(self, command: Command, gobj: GameObject) -> List[Event]:
-        """Return what actually happens.
-        IMPORTANT: This method can change turn_queue
-        """
-        result_list = list()
-        if command is None:
-            # Nothing to be happen
-            wait_cost = 80
-            self._top_actor_wait(wait_cost)
-            result_list.append(GobjDoNothingEvent(gobj))
-        elif isinstance(command, MoveCommand):
-            current_tile_ij = gobj.get_pos()
-            new_tile_ij = current_tile_ij + command.dij
-            target_tile = tile_map.get_tile(new_tile_ij)
-            if target_tile is None:
-                # TODO: There is must not be magic consts!
-                wait_cost = 80
-                self._top_actor_wait(wait_cost)
-                result_list.append(GobjDoNothingEvent(gobj))
-            else:
-                # TODO: we need some fast sparse structures
-                for item_actor in self._state_of_things.get_actors():
-                    if gobj == item_actor:
-                        continue
-                    actor_pos = item_actor.get_pos()
-                    if new_tile_ij == actor_pos:
-                        wait_cost = 120
-                        self._top_actor_wait(wait_cost)  # TODO: this should be attack command!
-                        result_list.append(MeeleAttackEvent(gobj, item_actor))
-                        break
-                else:
-                    # Ok, now we actually moving!
-                    move_cost = target_tile.move_cost()
-                    self._top_actor_wait(move_cost)
-                    result_list.append(MoveGobjEvent(gobj, current_tile_ij, new_tile_ij))
-        return result_list
-
-    def _top_actor_wait(self, time):
-        actor = self._turn_queue.top_actor()
-        self._turn_queue.pop_actor()
-        # TODO: There is must not be magic consts!
-        self._turn_queue.add_turn(actor, time)
 
 
 class BaseState:
