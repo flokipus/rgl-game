@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import List, Callable, Any
-from collections import namedtuple
 
 from gameobj.basegobj import GameObject
 
@@ -102,7 +101,7 @@ class TurnOrderInTime:
             binding.time -= time_passed
         self._move_turns.pop_item()
 
-    def current_gobj(self) -> GobjWithTime:
+    def current_turn(self) -> GobjWithTime:
         """Just look at current actor"""
         return self._move_turns.top_item()
 

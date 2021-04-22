@@ -19,11 +19,11 @@ class Tile(GameObject):
         GameObject.__init__(self, pos=pos, name=name, sprite=sprite)
 
     @overload
-    def move_cost(self) -> float: ...
+    def move_cost(self) -> int: ...
 
-    def move_cost(self) -> float:
+    def move_cost(self) -> int:
         """Default cost"""
-        return 100.0
+        return 100
 
     @classmethod
     def empty_tile(cls, pos: Vec2i = Vec2i(0, 0), name: str = ''):

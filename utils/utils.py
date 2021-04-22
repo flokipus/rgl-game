@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Union, Tuple, List
-from numpy import ndarray
 
 from settings.screen import *
 

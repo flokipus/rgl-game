@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 
-from .event import ModelEvent
+from event.event import Event
 from gameobj.basegobj import GameObject
 
 
