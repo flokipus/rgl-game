@@ -1,16 +1,19 @@
 import pygame
+import time
+import math
 from typing import Any, Tuple, Dict, Callable, Union, List, Set
 
 from common.gameobj.basegobj import GameObject
 from common.event import event
 from common.utils.user_input.keyboard_processor import UserKeyboardProcessor
 from common.utils import utils
+from common.state import interface
 from gamelogic.model.model import ModelGame
 from .graphics.cell_sprites.sprite_ascii import AsciiCellCreator
 from .settings import screen  # FONT_SIZE, CELL_SIZE
 from .eventcallback import apply_event
 from .visualisation import Visualisation
-from .visualisaton_state import BaseState
+from .visualstate.basic import VisualState
 from .input_settings import key_to_command_name, PlayerCommand
 from .settings import colors
 
@@ -24,29 +27,55 @@ DOT = AsciiCellCreator(pygame.font.Font(None, screen.FONT_SIZE), screen.CELL_SIZ
     )
 
 
+class Timings:
+    def __init__(self, time_to_move: float, time_to_attack: float, fps: int):
+        self._time_to_move = time_to_move
+        self._time_to_attack = time_to_attack
+        self._fps = fps
+
+    @property
+    def time_to_move(self):
+        return self._time_to_move
+
+    @property
+    def time_to_attack(self):
+        return self._time_to_attack
+
+    @property
+    def fps(self):
+        return self._fps
+
+
 class ViewGame:
     def __init__(self, model: ModelGame, screen_size: Tuple[int, int], tile_size_pixels: utils.Vec2i, fps: int):
         self.model = model
 
+        # Timings class
         self._time_to_move = 0.3
-        self._time_to_attack = 0.1
+        self._time_to_attack = 0.3
         self._fps = fps
 
+        # Camera class
+        self._center = self.cell_ij_to_pixel(model.player_character.get_pos())
+
+        # Display class
         self._screen_size = utils.Vec2i(screen_size[0], screen_size[1])
         self._tile_size_pixels = tile_size_pixels
         self.main_display = pygame.display.set_mode(screen_size)
-        self._center = self.cell_ij_to_pixel(model.player_character.get_pos())
 
+        # Animations class
         self._gobjs_to_animations: Dict[GameObject, Visualisation] = dict()
         for gobj in self.model.get_all_gobjs():
             pixel_xy = self.cell_ij_to_pixel(gobj.get_pos())
             self._gobjs_to_animations[gobj] = Visualisation(sprite=gobj.get_sprite(),
                                                             pixel_xy_offset=pixel_xy,
-                                                            state=BaseState())
+                                                            state=VisualState())
 
+        # Event handler
         self._we_wait_them: Set[GameObject] = set()
         self._events_to_process = list()
 
+        # User interactions with GUI
         # TODO: Class for user input!
         self._user_keyboard = UserKeyboardProcessor(delay=0.3)
         self._key_to_command_name = key_to_command_name
@@ -70,7 +99,7 @@ class ViewGame:
     def is_ready(self) -> bool:
         return len(self._we_wait_them) == 0 and len(self._events_to_process) == 0
 
-    def set_new_animation_state(self, gobj: GameObject, new_state: BaseState):
+    def set_new_animation_state(self, gobj: GameObject, new_state: interface.IState):
         self._gobjs_to_animations[gobj].set_new_state(new_state)
 
     def get_gobj_visualisation(self, gobj) -> Visualisation:
@@ -79,9 +108,6 @@ class ViewGame:
     def add_gobj_to_wait_animation(self, gobj: GameObject):
         """We wait until gobj\'s animation returns ready()=True"""
         self._we_wait_them.add(gobj)
-    # def add_gobj_to_wait(self, gobj: GameObject, condition_callback: Callable[[Any], bool]):
-    #     """We wait until gobj\'s callback doesnt return True"""
-    #     self._we_wait_them[gobj] = condition_callback
 
     def process_events(self):
         for item_event in self._events_to_process:
@@ -93,8 +119,8 @@ class ViewGame:
             animations.update()
         to_delete = set()
         for obj in self._we_wait_them:
-            obj_visual_state = self._gobjs_to_animations[obj].get_state()
-            if obj_visual_state.ready():
+            anim = self._gobjs_to_animations[obj]
+            if anim.ready():
                 to_delete.add(obj)
         for obj in to_delete:
             self._we_wait_them.remove(obj)

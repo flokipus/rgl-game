@@ -1,5 +1,5 @@
 from common.event import event
-from . import visualisaton_state
+from .visualstate import derived as der_v_state
 
 
 def gobj_wait_callback(event_occured: event.GobjWaitEvent, game_view) -> None:
@@ -13,7 +13,7 @@ def gobj_move_callback(event_occured: event.GobjMoveEvent, game_view) -> None:
     dxy[1] = -dxy[1]  # hack. In pygame y-dimension oriented from top to bot
     game_view.set_new_animation_state(
         event_occured.turn_maker,
-        visualisaton_state.Moving(
+        der_v_state.Moving(
             dxy,
             time_to_move=game_view.time_to_move,
             fps=game_view.fps
@@ -27,10 +27,10 @@ def gobj_attack_callback(event_occured: event.GobjMeleeAttackEvent, game_view) -
     dxy[1] = -dxy[1]
     game_view.set_new_animation_state(
         event_occured.turn_maker,
-        visualisaton_state.MeleeAttacking(dxy,
-                                          time_to_attack=game_view.time_to_move,
-                                          max_amplitude_ratio=0.1,
-                                          fps=game_view.fps)
+        der_v_state.MeleeAttacking(dxy,
+                                   time_to_attack=game_view.time_to_move,
+                                   max_amplitude_ratio=0.15,
+                                   fps=game_view.fps)
     )
     game_view.add_gobj_to_wait_animation(event_occured.turn_maker)
 
