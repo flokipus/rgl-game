@@ -12,9 +12,17 @@ class Event:
         return 'Empty event'
 
 
-class GobjMoveEvent(Event):
-    def __init__(self, turn_maker: GameObject, turn_time: int, to_ij: Vec2i):
+class GobjEvent(Event):
+    def __init__(self, turn_maker: GameObject):
         self.turn_maker = turn_maker
+
+    def who_am_i(self) -> str:
+        return 'GameObject event'
+
+
+class GobjMoveEvent(GobjEvent):
+    def __init__(self, turn_maker: GameObject, turn_time: int, to_ij: Vec2i):
+        GobjEvent.__init__(self, turn_maker)
         self.turn_time = turn_time
         self.to_ij = to_ij
         self.from_ij = turn_maker.get_pos()
@@ -28,9 +36,9 @@ class GobjMoveEvent(Event):
         )
 
 
-class GobjWaitEvent(Event):
+class GobjWaitEvent(GobjEvent):
     def __init__(self, turn_maker: GameObject, turn_time: int):
-        self.turn_maker = turn_maker
+        GobjEvent.__init__(self, turn_maker)
         self.turn_time = turn_time
 
     def who_am_i(self) -> str:
@@ -41,9 +49,9 @@ class GobjWaitEvent(Event):
         )
 
 
-class GobjMeleeAttackEvent(Event):
+class GobjMeleeAttackEvent(GobjEvent):
     def __init__(self, turn_maker: GameObject, turn_time: int, target_for_attack: GameObject):
-        self.turn_maker = turn_maker
+        GobjEvent.__init__(self, turn_maker)
         self.attack_from_ij = turn_maker.get_pos()
         self.turn_time = turn_time
         self.target_for_attack = target_for_attack

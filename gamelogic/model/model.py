@@ -7,22 +7,23 @@ from .eventcallback import apply_event
 from common.event.event import Event
 from common.gameobj.basegobj import GameObject
 from common.gameobj.map.tilemaps import TileMap, Tile
+from common.observer import interface
 from common.utils.utils import Vec2i
 
 
-class ModelGame:
+class ModelGame(interface.Subject):
     def __init__(self,
                  init_actors: Dict[GameObject, ModelCommandChannel],
                  tile_map: TileMap,
                  items: Set[GameObject],
                  player_character: GameObject):
+        super().__init__()
         if player_character not in init_actors:
             raise RuntimeError('Player character should be actor')
         self._actors: actors.Actors = actors.Actors(initial_actors=init_actors)
         self._player_character = player_character
         self._tile_map = tile_map
         self._items = items
-        self._events_occurred = list()
 
     @property
     def player_character(self) -> GameObject:
@@ -60,17 +61,9 @@ class ModelGame:
             new_events = this_turn_command.to_model_events(model=self, gobj=this_turn_gobj)
             for event in new_events:
                 apply_event(event_occured=event, game_model=self)  # self._actors can be updated here
-            self._events_occurred += new_events
+                self.notify(event)
             next_turn_gobj = self._actors.current_gobj()
             does_controlled_by_player = (next_turn_gobj == self._player_character)
 
-    def get_events(self) -> List[Event]:
-        return self._events_occurred
-
     def put_user_command(self, command: ModelCommand) -> None:
         self._actors.get_command_channel(self._player_character).put_command(command)
-
-    def unload_events(self) -> List[Event]:
-        unloaded = self._events_occurred.copy()
-        self._events_occurred.clear()
-        return unloaded

@@ -2,7 +2,7 @@ import pygame
 
 from common.utils import utils
 from common.state import interface
-from .visualstate.basic import VisualState
+from gamelogic.view.visualisation.visualisation_states.basic import VisualState
 
 
 class VisualStateOwner(interface.IStateOwner):

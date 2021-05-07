@@ -1,6 +1,6 @@
 import pygame
 
-from .user_moves import PlayerCommand
+from gamelogic.view.user_moves import PlayerCommand
 
 
 key_to_command_name = {

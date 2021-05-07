@@ -26,7 +26,7 @@ class UserCommandChannel(ModelCommandChannel):
     """TODO: Гибкая настройка key_map -> command, обработка gui + mouse"""
     def __init__(self) -> None:
         self.command_buffer = list()
-        self.max_buffer_len = 2
+        self.max_buffer_len = 1
 
     def request_command(self) -> Union[None, command.ModelCommand]:
         if len(self.command_buffer) == 0:

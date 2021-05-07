@@ -3,8 +3,8 @@ from typing import Union, Tuple
 
 
 class Vec2i:
-    def __init__(self, x: Union[int], y: Union[int]):
-        self.xy = (x, y)
+    def __init__(self, x: Union[int, float], y: Union[int, float]):
+        self.xy = (int(x), int(y))
 
     @property
     def x(self) -> int:

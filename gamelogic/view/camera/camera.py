@@ -1,6 +1,6 @@
 from common.utils import utils
 from common.state import interface
-from .states.base import CameraBaseState
+from .camera_states.base import CameraBaseState
 
 
 class Camera(interface.IStateOwner):

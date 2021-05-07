@@ -39,12 +39,16 @@ if __name__ == '__main__':
     actors, main_hero = predefined_actors()
     model_game = model.ModelGame(init_actors=actors, tile_map=tile_map, items=set(), player_character=main_hero)
     tile_size_pixels = Vec2i(screen.CELL_SIZE[0], screen.CELL_SIZE[1])
-    view_game = view.ViewGame(model=model_game, screen_size=screen.SCREEN_SIZE, tile_size_pixels=tile_size_pixels, fps=30)
+    view_game = view.ViewGame(model=model_game, screen_size=screen.SCREEN_SIZE, tile_size_pixels=tile_size_pixels,
+                              fps=30)
+
+    model_game.register_observer(view_game)
 
     time_end = pygame.time.get_ticks()
 
     frame_counter = 0
 
+    time_intro = pygame.time.get_ticks()
     while True:
         # print('------')
         time_begin = pygame.time.get_ticks()
@@ -55,20 +59,28 @@ if __name__ == '__main__':
 
         command_from_user = view_game.get_user_commands()
         if command_from_user == view.PlayerCommand.EXIT_GAME:
+            curr_time = pygame.time.get_ticks()
+            elapsed = curr_time - time_intro
+            elapsed_sec = elapsed / 1000
+            expected_frames = elapsed_sec * view_game.fps
+            print('Time elapsed={}s; frames={}; expected frames={}'.format(elapsed_sec, frame_counter, expected_frames))
             exit()
         elif command_from_user is not None:
-            print('COMAND from user -> model: frame {}'.format(frame_counter))
+            # print('COMAND from user -> model: frame {}'.format(frame_counter))
             command_for_model = controller.USER_MOVES_TO_COMMAND[command_from_user]
             model_game.put_user_command(controller.USER_MOVES_TO_COMMAND[command_from_user])
+            # if view_game.is_ready():
+            #
 
         if view_game.is_ready():
             model_game.one_cycle_turns()
-        events_from_model = model_game.unload_events()
-        view_game.update(events_from_model)
+
+        view_game.update()
 
         time_end = pygame.time.get_ticks()
         elapsed = time_end - time_begin
+
         # print(time_end)
-        # print('##########', elapsed)
+        # print('########## elapsed {} ms; game still has {} ms'.format(elapsed, (1000/view_game.fps - elapsed)))
         # print('##########', clock.get_fps())
         clock.tick(view_game.fps)
