@@ -7,7 +7,7 @@ from gamelogic.view.visualisation.visualisation_states.basic import VisualState
 
 class VisualStateOwner(interface.IStateOwner):
     def ready(self) -> bool:
-        return type(self._state) == VisualState
+        return self._state.ready()
 
 
 class Visualisation(VisualStateOwner):

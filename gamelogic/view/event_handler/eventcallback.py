@@ -1,6 +1,7 @@
 from common.event import event
 from gamelogic.view.visualisation.visualisation_states import derived as visual_states
 from gamelogic.view.camera.camera_states import derived as camera_states
+from gamelogic.view.sound import axe_sound
 
 
 class ViewEventCallback:
@@ -53,7 +54,7 @@ def gobj_attack_callback(event_occured: event.GobjMeleeAttackEvent, game_view) -
         event_occured.turn_maker,
         visual_states.MeleeAttacking(dxy,
                                      time_to_attack=game_view._time_to_attack,
-                                     max_amplitude_ratio=0.10,
+                                     max_amplitude_ratio=0.05,
                                      fps=game_view.fps)
     )
     if event_occured.turn_maker == game_view.get_player():
@@ -63,6 +64,8 @@ def gobj_attack_callback(event_occured: event.GobjMeleeAttackEvent, game_view) -
             amplitude=5,
             fps=game_view.fps)
         )
+        axe_sound.play()
+
 
 
 EVENT_TYPE_TO_CALLBACK = {

@@ -8,6 +8,32 @@ from .basic import VisualState
 from common.utils import utils
 
 
+class Standing(VisualState):
+    def __init__(self, amplitude: float = 3, time_to_move: float = 2):
+        self.amplitude = amplitude
+        self.enter_time = None
+        self.time_to_move = time_to_move
+        self.original_xy = None
+
+    def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
+        self.enter_time = time()
+        self.original_xy = owner.get_pixel_offset()
+
+    def update(self, *, owner: Visualisation) -> Union[None, VisualState]:
+        current_time = time()
+        elapsed = current_time - self.enter_time
+        r = elapsed / self.time_to_move
+        new_pose = utils.Vec2i(0, -abs(self.amplitude * sin(pi * r) ** 2)) + self.original_xy
+        owner.set_pixel_xy_offset(new_pose)
+        return None
+
+    def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
+        owner.set_pixel_xy_offset(self.original_xy)
+
+    def ready(self) -> bool:
+        return True
+
+
 class Moving(VisualState):
     def __init__(self,
                  dxy: utils.Vec2i,
@@ -23,9 +49,13 @@ class Moving(VisualState):
         current_time = time()
         elapsed_time = current_time - self.time_begin
         r = min(1.0, elapsed_time / self.time_to_move)
+        # #####
+        # _DEBUG_stuttering.current_frame_state = type(self)
+        # _DEBUG_stuttering.current_frame_r = r
+        # #####
         owner.set_pixel_xy_offset((self.initial_offset_xy + self.dxy * r))
         if elapsed_time > self.time_to_move:
-            return VisualState()
+            return Standing()
         else:
             return None
 
@@ -36,6 +66,9 @@ class Moving(VisualState):
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
         owner.set_pixel_xy_offset(self.initial_offset_xy + self.dxy)
 
+    def ready(self) -> bool:
+        return False
+
 
 class BouncingMotion(VisualState):
     def __init__(self,
@@ -43,6 +76,7 @@ class BouncingMotion(VisualState):
                  time_to_move: float,
                  amplitude: float,
                  fps: int):
+        self.ready_flag = False
         self.dxy = dxy
         self.time_to_move = time_to_move
         self.initial_offset_xy = None
@@ -53,20 +87,29 @@ class BouncingMotion(VisualState):
     def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
         self.time_begin = time() - 1/self.fps
         self.initial_offset_xy = owner.get_pixel_offset()
+        self.ready_flag = False
 
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
         owner.set_pixel_xy_offset(self.initial_offset_xy + self.dxy)
 
     def update(self, *, owner: Visualisation) -> Union[None, VisualState]:
+        if self.ready_flag:
+            return Standing()
         current_time = time()
         elapsed_time = current_time - self.time_begin
-        r = min(1.0, elapsed_time / self.time_to_move)
-        new_pose = utils.Vec2i(0, abs(self.amplitude * sin(pi*r)**2)) + self.initial_offset_xy + (self.dxy * r)
-        owner.set_pixel_xy_offset(new_pose)
         if elapsed_time > self.time_to_move:
-            return VisualState()
-        else:
-            return None
+            self.ready_flag = True
+        r = min(1.0, elapsed_time / self.time_to_move)
+        #####
+        # _DEBUG_stuttering.current_frame_state = type(self)
+        # _DEBUG_stuttering.current_frame_r = r
+        #####
+        new_pose = utils.Vec2i(0, -abs(self.amplitude * sin(pi*r)**2)) + self.initial_offset_xy + (self.dxy * r)
+        owner.set_pixel_xy_offset(new_pose)
+        return None
+
+    def ready(self) -> bool:
+        return self.ready_flag
 
 
 class MeleeAttacking(VisualState):
@@ -77,10 +120,12 @@ class MeleeAttacking(VisualState):
         self.fps = fps
         self.time_begin = None
         self.initial_offset_xy = None
+        self.ready_flag = False
 
     def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
         self.time_begin = time() - 1/self.fps
         self.initial_offset_xy = owner.get_pixel_offset()
+        self.ready_flag = False
 
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
         owner.set_pixel_xy_offset(self.initial_offset_xy)
@@ -90,14 +135,18 @@ class MeleeAttacking(VisualState):
         return sin(2 * pi * r)
 
     def update(self, *, owner: Visualisation) -> Union[None, VisualState]:
+        if self.ready_flag:
+            return Standing()
         current_time = time()
         elapsed_time = current_time - self.time_begin
         r = min(1.0, elapsed_time / self.time_to_attack)
         if r < 1.0:
             delta_offset = self.dxy * MeleeAttacking.amplitude(r) * self.max_amplitude_ratio
-            # print('delta_offset: {}'.format(delta_offset))
             old_offset = owner.get_pixel_offset()
             owner.set_pixel_xy_offset(old_offset + delta_offset)
             return None
         else:
-            return VisualState()
+            self.ready_flag = True
+
+    def ready(self) -> bool:
+        return self.ready_flag

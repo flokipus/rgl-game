@@ -1,6 +1,12 @@
+from typing import overload
+
 from common.state import interface
 
 
 class VisualState(interface.IState):
     """Base state. It does nothing."""
-    pass
+    @overload
+    def ready(self) -> bool: ...
+
+    def ready(self) -> bool:
+        return True

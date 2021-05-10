@@ -9,8 +9,8 @@ from common.utils import utils
 from common.state import interface
 from gamelogic.model.model import ModelGame
 from gamelogic.view.visualisation.visualisation_states.basic import VisualState
+from gamelogic.view.visualisation.visualisation_states.derived import Standing
 from gamelogic.view.settings.input_settings import key_to_command_name, PlayerCommand
-from gamelogic.view.event_handler.eventcallback import apply_event
 
 from .camera.camera import Camera, CameraBaseState
 from .graphics.cell_sprites.sprite_ascii import AsciiCellCreator
@@ -18,6 +18,9 @@ from .settings import screen  # FONT_SIZE, CELL_SIZE
 from .settings import colors
 from .visualisation.visualisation import Visualisation
 from .event_handler.event_handler import GobjEventHandler
+
+
+import _DEBUG_stuttering
 
 
 pygame.init()
@@ -54,9 +57,6 @@ class ViewGame(Observer, Subject):
 
         self.model = model
 
-
-        # self._timings = Timings(time_to_move=ti)
-
         # Timings class
         self._time_to_move = 0.4
         self._time_to_attack = 0.4
@@ -69,8 +69,6 @@ class ViewGame(Observer, Subject):
         self._tile_size_pixels = tile_size_pixels
         self.main_display = pygame.display.set_mode(screen_size)
 
-
-
         # Camera class
         init_center = self.cell_ij_to_pixel(model.player_character.get_pos())
         self._camera = Camera(init_center, CameraBaseState())
@@ -82,6 +80,8 @@ class ViewGame(Observer, Subject):
             self._gobjs_to_animations[gobj] = Visualisation(sprite=gobj.get_sprite(),
                                                             pixel_xy_offset=pixel_xy,
                                                             state=VisualState())
+        for gobj in self.model.get_actors_gobjs():
+            self._gobjs_to_animations[gobj].set_new_state(Standing())
 
         # User interactions with GUI
         # TODO: Class for user input!
@@ -147,12 +147,21 @@ class ViewGame(Observer, Subject):
             return None
 
     def update(self):
-        self._gobj_event_handler.update()
+        self._gobj_event_handler.flush_event_queue()
+        self._gobj_event_handler.apply_events_block()
         self.update_animations()
+        self._gobj_event_handler.remove_finished_events()
+
         self._camera.update()
         self.redraw()
 
     def redraw(self):
+        player = self.get_player()
+        vis_player = self.get_gobj_visualisation(player)
+
+        _DEBUG_stuttering.current_frame_xy = vis_player.get_pixel_offset().to_tuple()
+
+        # print('main_char xy: {}'.format(vis_player.get_pixel_offset()))
         self.main_display.fill(colors.BLACK_GREY)
 
         camera_center = self._camera.get_center() - self._screen_size / 2
@@ -183,6 +192,7 @@ class ViewGame(Observer, Subject):
             pix_pos = anim.get_pixel_offset() - camera_center
             if flag_to_draw_dot:
                 self.main_display.blit(DOT, pix_pos.to_tuple())
+
         for gobj in layer_1:
             if gobj in self._gobjs_to_animations:
                 anim = self._gobjs_to_animations[gobj]

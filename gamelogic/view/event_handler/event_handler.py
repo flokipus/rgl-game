@@ -5,6 +5,9 @@ from common.gameobj.basegobj import GameObject
 from .eventcallback import apply_event
 
 
+import _DEBUG_stuttering
+
+
 class BlockOfEvents:
     def __init__(self):
         self.events = list()
@@ -52,6 +55,7 @@ class GobjEventHandler:
         self.remove_finished_events()
         self.flush_event_queue()
         self.apply_events_block()
+        _DEBUG_stuttering.current_frame_event_handler_len = len(self._block_of_events.participants_istoks)
 
     def remove_finished_events(self):
         self.__to_remove_buffer.clear()
