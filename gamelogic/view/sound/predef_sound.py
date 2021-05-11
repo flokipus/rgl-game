@@ -1,7 +1,8 @@
 import pygame
-import os
+import pathlib
 
 
 pygame.init()
-swing_path = os.path.dirname(os.path.realpath(__file__))
-axe_sound = pygame.mixer.Sound(swing_path + '../../../../_gamedata/swing.wav')
+game_root = pathlib.Path(__file__).parent.parent.parent.parent
+swing_sound_path = game_root/'_gamedata'/'swing.wav'
+axe_sound = pygame.mixer.Sound(swing_sound_path)
