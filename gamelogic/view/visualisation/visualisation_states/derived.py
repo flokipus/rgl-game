@@ -17,18 +17,18 @@ class Standing(VisualState):
 
     def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
         self.enter_time = time()
-        self.original_xy = owner.get_pixel_offset()
+        self.original_xy = owner.get_corner_xy()
 
     def update(self, *, owner: Visualisation) -> Union[None, VisualState]:
         current_time = time()
         elapsed = current_time - self.enter_time
         r = elapsed / self.time_to_move
         new_pose = utils.Vec2i(0, -abs(self.amplitude * sin(pi * r) ** 2)) + self.original_xy
-        owner.set_pixel_xy_offset(new_pose)
+        owner.set_corner_xy(new_pose)
         return None
 
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
-        owner.set_pixel_xy_offset(self.original_xy)
+        owner.set_corner_xy(self.original_xy)
 
     def ready(self) -> bool:
         return True
@@ -53,7 +53,7 @@ class Moving(VisualState):
         # _DEBUG_stuttering.current_frame_state = type(self)
         # _DEBUG_stuttering.current_frame_r = r
         # #####
-        owner.set_pixel_xy_offset((self.initial_offset_xy + self.dxy * r))
+        owner.set_corner_xy((self.initial_offset_xy + self.dxy * r))
         if elapsed_time > self.time_to_move:
             return Standing()
         else:
@@ -61,10 +61,10 @@ class Moving(VisualState):
 
     def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
         self.time_begin = time() - 1/self.fps
-        self.initial_offset_xy = owner.get_pixel_offset()
+        self.initial_offset_xy = owner.get_corner_xy()
 
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
-        owner.set_pixel_xy_offset(self.initial_offset_xy + self.dxy)
+        owner.set_corner_xy(self.initial_offset_xy + self.dxy)
 
     def ready(self) -> bool:
         return False
@@ -86,11 +86,11 @@ class BouncingMotion(VisualState):
 
     def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
         self.time_begin = time() - 1/self.fps
-        self.initial_offset_xy = owner.get_pixel_offset()
+        self.initial_offset_xy = owner.get_corner_xy()
         self.ready_flag = False
 
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
-        owner.set_pixel_xy_offset(self.initial_offset_xy + self.dxy)
+        owner.set_corner_xy(self.initial_offset_xy + self.dxy)
 
     def update(self, *, owner: Visualisation) -> Union[None, VisualState]:
         if self.ready_flag:
@@ -105,7 +105,7 @@ class BouncingMotion(VisualState):
         # _DEBUG_stuttering.current_frame_r = r
         #####
         new_pose = utils.Vec2i(0, -abs(self.amplitude * sin(pi*r)**2)) + self.initial_offset_xy + (self.dxy * r)
-        owner.set_pixel_xy_offset(new_pose)
+        owner.set_corner_xy(new_pose)
         return None
 
     def ready(self) -> bool:
@@ -124,11 +124,11 @@ class MeleeAttacking(VisualState):
 
     def enter(self, *, owner: Visualisation, old_state: VisualState) -> None:
         self.time_begin = time() - 1/self.fps
-        self.initial_offset_xy = owner.get_pixel_offset()
+        self.initial_offset_xy = owner.get_corner_xy()
         self.ready_flag = False
 
     def exit(self, *, owner: Visualisation, next_state: VisualState) -> None:
-        owner.set_pixel_xy_offset(self.initial_offset_xy)
+        owner.set_corner_xy(self.initial_offset_xy)
 
     @staticmethod
     def amplitude(r: float) -> float:
@@ -142,8 +142,8 @@ class MeleeAttacking(VisualState):
         r = min(1.0, elapsed_time / self.time_to_attack)
         if r < 1.0:
             delta_offset = self.dxy * MeleeAttacking.amplitude(r) * self.max_amplitude_ratio
-            old_offset = owner.get_pixel_offset()
-            owner.set_pixel_xy_offset(old_offset + delta_offset)
+            old_offset = owner.get_corner_xy()
+            owner.set_corner_xy(old_offset + delta_offset)
             return None
         else:
             self.ready_flag = True

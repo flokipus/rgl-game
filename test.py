@@ -125,7 +125,7 @@ if __name__ == '__main__':
             time_stamp_model_total += (time_stamp_model2 - time_stamp_model1)
 
         time_stamp_view1 = pygame.time.get_ticks()
-        view_game._gobj_event_handler.flush_event_queue()
+        view_game._gobj_event_handler.form_events_block()
         view_game._gobj_event_handler.apply_events_block()
         view_game.update_animations()
         view_game._gobj_event_handler.remove_finished_events()

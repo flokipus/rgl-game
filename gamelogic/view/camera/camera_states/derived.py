@@ -54,7 +54,7 @@ class CameraSticky(CameraBaseState):
         pass
 
     def update(self, *, owner: Camera) -> Union[None, CameraBaseState]:
-        owner.set_center(self.target_animation.get_pixel_offset())
+        owner.set_center(self.target_animation.get_corner_xy())
         return None
 
 

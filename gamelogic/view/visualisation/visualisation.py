@@ -16,14 +16,16 @@ class Visualisation(VisualStateOwner):
                  pixel_xy_offset: utils.Vec2i,
                  state: VisualState):
         self._sprite = sprite
-        self._pixel_xy_offset = pixel_xy_offset
+        self._corner_xy = pixel_xy_offset
         VisualStateOwner.__init__(self, init_state=state)
 
-    def set_pixel_xy_offset(self, new_offset: utils.Vec2i):
-        self._pixel_xy_offset = new_offset
+    def set_corner_xy(self, new_offset: utils.Vec2i):
+        """Set left bottom corner of MBR of sprite"""
+        self._corner_xy = new_offset
 
-    def get_pixel_offset(self) -> utils.Vec2i:
-        return self._pixel_xy_offset
+    def get_corner_xy(self) -> utils.Vec2i:
+        """Get left bottom corner of MBR of sprite"""
+        return self._corner_xy
 
     def get_state(self):
         return self._state

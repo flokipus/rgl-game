@@ -1,4 +1,4 @@
-from gamelogic.view.user_moves import PlayerCommand
+from gamelogic.view.settings.user_moves import PlayerCommand
 from gamelogic.model import command
 from common.utils import utils
 

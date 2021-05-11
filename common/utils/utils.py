@@ -17,6 +17,9 @@ class Vec2i:
     def to_tuple(self) -> Tuple[int, int]:
         return self.xy
 
+    def copy(self) -> Vec2i:
+        return Vec2i(self.x, self.y)
+
     def __add__(self, other: Vec2i) -> Vec2i:
         return Vec2i(x=self.x + other.x, y=self.y + other.y)
 
@@ -73,27 +76,6 @@ class Vec2i:
 
     def __eq__(self, other: Vec2i):
         return self.xy == other.xy
-
-
-def cell_ij_to_pixel(ij: Vec2i, screen_size: Tuple[int, int], tile_size: Tuple[int, int]) -> Vec2i:
-    screen_width, screen_height = screen_size
-    tile_width, tile_height = tile_size
-    x = ij[0] * tile_width
-    y = screen_height - ij[1] * tile_height
-    return Vec2i(x, y)
-
-
-def pixel_pos_to_descartes(pixel_pos: Vec2i) -> Vec2i:
-    x = pixel_pos.x
-    y = MAP_HEIGHT - pixel_pos.y
-    return Vec2i(x=x, y=y)
-
-
-def pixel_pos_to_cell(pixel_pos: Vec2i) -> Vec2i:
-    descartes_pos = pixel_pos_to_descartes(pixel_pos)
-    cell_i = descartes_pos.x // CELL_WIDTH
-    cell_j = descartes_pos.y // CELL_HEIGHT
-    return Vec2i(x=cell_i, y=cell_j)
 
 
 if __name__ == '__main__':
