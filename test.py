@@ -21,7 +21,6 @@ def predefined_actors():
 
     input_channel = command_channel.UserCommandChannel()
     viking_sprite = pygame.image.load('./_gamedata/test2.png')
-    print(viking_sprite.get_size())
 
     w, h = viking_sprite.get_size()
     scale = 2

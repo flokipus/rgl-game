@@ -126,33 +126,3 @@ class VisualisationsContainer:
 
     def set_camera(self, new_camera: camera.Camera) -> None:
         self._camera = new_camera
-
-
-# class VisualisationsContainer:
-#     def __init__(self):
-#         self._actors: Dict[GameObject, Visualisation] = dict()
-#         self._items: Dict[GameObject, Visualisation] = dict()
-#         self._tiles: Dict[GameObject, Visualisation] = dict()
-#         self._environments: Dict[GameObject, Visualisation] = dict()
-#
-#     def set_actor_visual(self, gobj: GameObject, visual: Visualisation) -> None:
-#         self._actors[gobj] = visual
-#
-#     def get_actor_visual(self, gobj: GameObject) -> Visualisation:
-#         return self._actors[gobj]
-#
-#     def set_item_visual(self, gobj: GameObject, visual: Visualisation) -> None:
-#         self._items[gobj] = visual
-#
-#     def get_item_visual(self, gobj: GameObject) -> Visualisation:
-#         return self._items[gobj]
-#
-#     def set_tile_visual(self, gobj: GameObject, visual: Visualisation) -> None:
-#         self._tiles[gobj] = visual
-#
-#     def get_tile_visual(self, gobj: GameObject) -> Visualisation:
-#         return self._tiles[gobj]
-#
-#     def get_environment_visual(self, gobj: GameObject) -> Visualisation:
-#         return self._environments[gobj]
-

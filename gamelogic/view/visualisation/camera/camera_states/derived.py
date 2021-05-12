@@ -22,7 +22,6 @@ class CameraShaking(CameraBaseState):
     def enter(self, *, owner: Camera, old_state: CameraBaseState) -> None:
         self.time_begin = globals.current_time_ms / 1000
         self.init_center = owner.get_center()
-        print('shaking enter: ', self.init_center)
 
     def exit(self, *, owner: Camera, next_state: CameraBaseState) -> None:
         owner.set_center(self.init_center)
