@@ -3,6 +3,7 @@ import pygame
 
 from common.gameobj.basegobj import GameObject
 from common.gameobj.map.tilemaps import test_tile_map
+from common import globals
 from common.utils.utils import Vec2i
 from gamelogic.controller import controller
 from gamelogic.model import model  # ModelGame
@@ -10,6 +11,9 @@ from gamelogic.model import command_channel  # PlayerCommand
 from gamelogic.view import view  # PlayerCommand
 from gamelogic.view.graphics.cell_sprites import predef
 from gamelogic.view.settings import colors, screen
+from gamelogic.view.timings.timings import Timings
+
+from _DEBUG_perf import PERFOMANCE_DATA
 
 
 def predefined_actors():
@@ -63,91 +67,31 @@ if __name__ == '__main__':
 
     tile_map = test_tile_map()
     actors, main_hero = predefined_actors()
-    # actors, main_hero = predefined_actors_2()
+
     model_game = model.ModelGame(init_actors=actors, tile_map=tile_map, items=set(), player_character=main_hero)
-    tile_size_pixels = Vec2i(screen.CELL_SIZE[0], screen.CELL_SIZE[1])
-    view_game = view.ViewGame(model=model_game, screen_size=screen.SCREEN_SIZE, tile_size_pixels=tile_size_pixels,
-                              fps=60)
+    timings = Timings(time_to_move=0.3, time_to_attack=0.3, fps=30)
+    view_game = view.ViewGame(model=model_game, screen_size=screen.SCREEN_SIZE, tile_size_pixels=screen.CELL_SIZE,
+                              timings=timings, layers_num=4)
 
     model_game.register_observer(view_game)
 
-    time_end = pygame.time.get_ticks()
-
-    frame_counter = 0
-
-    time_intro = pygame.time.get_ticks()
-
-    time_stamp_model1 = 0
-    time_stamp_model2 = 0
-    time_stamp_model_total = 0
-
-    time_stamp_view1 = 0
-    time_stamp_view2 = 0
-    time_stamp_view_total = 0
-
-    time_stamp_draw1 = 0
-    time_stamp_draw2 = 0
-    time_stamp_draw_total = 0
-
+    PERFOMANCE_DATA.fps = timings.fps
+    PERFOMANCE_DATA.global_start()
     while True:
-        # print('------')
-        time_begin = pygame.time.get_ticks()
-        # print('still_have_ticks: {}'.format(time_begin - time_end))
-        # print(time_begin)
-
-        frame_counter += 1
-
+        PERFOMANCE_DATA.new_frame()
+        globals.current_time_ms = pygame.time.get_ticks()
         command_from_user = view_game.get_user_commands()
         if command_from_user == view.PlayerCommand.EXIT_GAME:
-            curr_time = pygame.time.get_ticks()
-            elapsed = curr_time - time_intro
-            elapsed_sec = elapsed / 1000
-            expected_frames = elapsed_sec * view_game.fps
-            print('Time elapsed={}s; frames={}; expected frames={}'.format(elapsed_sec, frame_counter, expected_frames))
-            print('Total time for model: {}ms; total time for view: {}ms; total time for drawing: {}ms'.format(time_stamp_model_total,
-                                                                                 time_stamp_view_total,
-                                                                                 time_stamp_draw_total))
-            print('Per frame for model: {}ms; for view: {}ms; for drawing: {}ms'.format(time_stamp_model_total / frame_counter,
-                                                                                        time_stamp_view_total / frame_counter,
-                                                                                        time_stamp_draw_total / frame_counter))
+            PERFOMANCE_DATA.global_end()
+            PERFOMANCE_DATA.print_finish_info()
             exit()
         elif command_from_user is not None and view_game.is_ready():
-            # print('COMAND from user -> model: frame {}'.format(frame_counter))
+            PERFOMANCE_DATA.start_model()
             command_for_model = controller.USER_MOVES_TO_COMMAND[command_from_user]
             model_game.put_user_command(controller.USER_MOVES_TO_COMMAND[command_from_user])
-            # if view_game.is_ready():
-            #
-
-        if view_game.is_ready():
-            time_stamp_model1 = pygame.time.get_ticks()
             model_game.one_cycle_turns()
-            time_stamp_model2 = pygame.time.get_ticks()
-            time_stamp_model_total += (time_stamp_model2 - time_stamp_model1)
+            PERFOMANCE_DATA.end_model()
 
-        time_stamp_view1 = pygame.time.get_ticks()
-        view_game._gobj_event_handler.form_events_block()
-        view_game._gobj_event_handler.apply_events_block()
-        view_game.update_animations()
-        view_game._gobj_event_handler.remove_finished_events()
-        view_game._camera.update()
-        time_stamp_view2 = pygame.time.get_ticks()
-        time_stamp_view_total += (time_stamp_view2 - time_stamp_view1)
+        view_game.update()
 
-        # view_game.update()
-        time_stamp_draw1 = pygame.time.get_ticks()
-        view_game.redraw()
-        time_stamp_draw2 = pygame.time.get_ticks()
-        time_stamp_draw_total += (time_stamp_draw2 - time_stamp_draw1)
-
-
-
-        time_end = pygame.time.get_ticks()
-        elapsed = time_end - time_begin
-
-        # print(time_end)
-        # print('########## elapsed {} ms; game still has {} ms'.format(elapsed, (1000/view_game.fps - elapsed)))
-        # print('##########', clock.get_fps())
-
-        # DEBUG_stuttering.print_info()
-
-        clock.tick(view_game.fps)
+        clock.tick(view_game.timings.fps)

@@ -21,12 +21,12 @@ def gobj_attack_callback(event_occured: event.GobjMeleeAttackEvent, game_model) 
     actors.make_turn(event_occured.turn_time)
 
 
-EVENT_TYPE_TO_CALLBACK = {
-    event.GobjWaitEvent: gobj_wait_callback,
-    event.GobjMoveEvent: gobj_move_callback,
-    event.GobjMeleeAttackEvent: gobj_attack_callback
-}
-
-
 def apply_event(event_occured: event.Event, game_model) -> None:
-    EVENT_TYPE_TO_CALLBACK[type(event_occured)](event_occured, game_model)
+    if isinstance(event_occured, event.GobjMoveEvent):
+        gobj_move_callback(event_occured, game_model)
+    elif isinstance(event_occured, event.GobjMeleeAttackEvent):
+        gobj_attack_callback(event_occured, game_model)
+    elif isinstance(event_occured, event.GobjWaitEvent):
+        gobj_wait_callback(event_occured, game_model)
+    else:
+        raise NotImplementedError('Model error: such event type is not implemented: {}'.format(type(event_occured)))

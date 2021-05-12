@@ -1,8 +1,8 @@
-import time
 import math
 from typing import Union
 
 from common.utils import utils
+from common import globals
 from .base import CameraBaseState
 from ..camera import Camera
 
@@ -20,14 +20,15 @@ class CameraShaking(CameraBaseState):
         self.init_center = None
 
     def enter(self, *, owner: Camera, old_state: CameraBaseState) -> None:
-        self.time_begin = time.time()
+        self.time_begin = globals.current_time_ms / 1000
         self.init_center = owner.get_center()
+        print('shaking enter: ', self.init_center)
 
     def exit(self, *, owner: Camera, next_state: CameraBaseState) -> None:
         owner.set_center(self.init_center)
 
     def update(self, *, owner: Camera) -> Union[None, CameraBaseState]:
-        delta_time = time.time() - self.time_begin
+        delta_time = globals.current_time_ms / 1000 - self.time_begin
         if delta_time < self.delay:
             return None
         else:
@@ -76,7 +77,7 @@ class CameraMovingWithDelay(CameraBaseState):
             self.actual_delay = self.delay_ratio
             self.__a = 1 / (4*self.actual_delay * self.time_to_move)
 
-        self.time_begin = time.time() - 1/self.fps  # hack?
+        self.time_begin = (globals.current_time_ms / 1000) - 1/self.fps  # hack?
         self.init_center = owner.get_center()
 
     def __func_math(self, r) -> float:
@@ -86,16 +87,18 @@ class CameraMovingWithDelay(CameraBaseState):
             return (r - self.actual_delay) / self.time_to_move
 
     def update(self, *, owner: Camera) -> Union[None, CameraBaseState]:
-        delta_time = time.time() - self.time_begin
+        delta_time = globals.current_time_ms / 1000 - self.time_begin
         if delta_time >= self.time_to_move + self.actual_delay:
             owner.set_center(self.new_center)
             return CameraBaseState()
         else:
             f = self.__func_math(delta_time)
-            # print('f({}) = {}'.format(delta_time, f))
             new_center = self.init_center + (self.new_center - self.init_center) * f
             owner.set_center(new_center)
             return None
+
+    def exit(self, *, owner, next_state) -> None:
+        owner.set_center(self.new_center)
 
 
 if __name__ == '__main__':

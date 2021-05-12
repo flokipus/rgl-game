@@ -35,12 +35,18 @@ class MoveGobjCommand(ModelCommand):
                 actor_pos = actor_gobj.get_pos()
                 if new_tile_ij == actor_pos:
                     wait_cost = 120
-                    events_list.append(event.GobjMeleeAttackEvent(gobj, wait_cost, actor_gobj))
+                    if gobj == model.player_character:
+                        events_list.append(event.PlayerMeleeAttackEvent(gobj, wait_cost, actor_gobj))
+                    else:
+                        events_list.append(event.GobjMeleeAttackEvent(gobj, wait_cost, actor_gobj))
                     break
             else:
                 # Ok, now we are actually moving!
                 move_cost = target_tile.move_cost()
-                events_list.append(event.GobjMoveEvent(gobj, move_cost, new_tile_ij))
+                if gobj == model.player_character:
+                    events_list.append(event.PlayerMoveEvent(gobj, move_cost, new_tile_ij))
+                else:
+                    events_list.append(event.GobjMoveEvent(gobj, move_cost, new_tile_ij))
         return events_list
 
 

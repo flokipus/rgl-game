@@ -1,8 +1,11 @@
-from typing import List, Set, Dict, overload
+from typing import List, Set, Dict
 
 from common.event.event import GobjEvent, GobjMeleeAttackEvent, GobjWaitEvent, GobjMoveEvent
 from common.gameobj.basegobj import GameObject
-from .eventcallback import apply_event
+from common.utils import utils
+from gamelogic.view.visualisation.visualisation import VisualisationsContainer
+from gamelogic.view.timings.timings import Timings
+from .eventcallback import GobjEventsCallbacks
 
 
 class BlockOfEvents:
@@ -50,10 +53,14 @@ class BlockOfEvents:
 
 
 class ModelEventHandler:
-    def __init__(self, view_holder):
+    def __init__(self,
+                 timings: Timings,
+                 tile_size_pixels: utils.Vec2i,
+                 visualisations: VisualisationsContainer):
         self._event_queue: List[GobjEvent] = list()
-        self._view_holder = view_holder
         self._block_of_events = BlockOfEvents()
+        self._callbacker = GobjEventsCallbacks(timings, tile_size_pixels)
+        self._visualisations = visualisations
         self.__to_remove_buffer = set()
 
     def add_event(self, event: GobjEvent) -> None:
@@ -62,7 +69,7 @@ class ModelEventHandler:
     def remove_finished_events(self):
         self.__to_remove_buffer.clear()
         for gobj in self._block_of_events.busy_gobjs_adjs:
-            visualisation = self._view_holder.get_gobj_visualisation(gobj)
+            visualisation = self._visualisations.get_gobj_visual(gobj)
             if visualisation.ready():
                 self.__to_remove_buffer.add(gobj)
         self._block_of_events.remove_busy_src(self.__to_remove_buffer)
@@ -89,7 +96,7 @@ class ModelEventHandler:
 
     def apply_events_block(self):
         for event in self._block_of_events.events:
-            apply_event(event, self._view_holder)
+            self._callbacker.apply_event(event, self._visualisations)
         self._block_of_events.events.clear()
 
     def ready(self) -> bool:

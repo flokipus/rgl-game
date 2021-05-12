@@ -67,3 +67,17 @@ class GobjMeleeAttackEvent(GobjEvent):
             self.target_for_attack.name,
             self.target_for_attack.get_pos()
         )
+
+
+class PlayerMeleeAttackEvent(GobjMeleeAttackEvent):
+    pass
+
+
+class PlayerMoveEvent(GobjMoveEvent):
+    pass
+
+
+if __name__ == '__main__':
+    gobj = GameObject(pos=Vec2i(0, 0), name='void', sprite=None)
+    e = PlayerMeleeAttackEvent(gobj, turn_time=1, target_for_attack=gobj)
+    print(e.who_am_i())

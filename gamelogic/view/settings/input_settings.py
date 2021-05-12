@@ -3,7 +3,7 @@ import pygame
 from gamelogic.view.settings.user_moves import PlayerCommand
 
 
-KEY_TO_COMMAND = {
+KEYS_TO_COMMANDS = {
     pygame.K_UP: PlayerCommand.MOVE_UP,
     pygame.K_w: PlayerCommand.MOVE_UP,
     pygame.K_DOWN: PlayerCommand.MOVE_DOWN,

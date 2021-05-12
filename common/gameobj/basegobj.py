@@ -14,7 +14,7 @@ class GameObject:
     def __init__(self, *, pos: Vec2i, name: str = '', sprite: Union[None, pygame.Surface] = None):
         self._pos = pos
         self._sprite = sprite
-        self.name = name
+        self._name = name
         self.__id = GameObject.__class_id_counter
         GameObject.__class_id_counter += 1
 
@@ -44,3 +44,9 @@ class GameObject:
 
     def set_sprite(self, new_sprite: pygame.Surface) -> None:
         self._sprite = new_sprite
+
+    def get_name(self) -> str:
+        return self._name
+
+    def set_name(self, new_name):
+        self._name = new_name
