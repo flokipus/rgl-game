@@ -1,4 +1,4 @@
 # Не люблю глобальных переменных, но тут увы, самое простое решение.
 
 
-current_time_ms: int = 0
+current_frame_time_ms: int = 0

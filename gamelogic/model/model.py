@@ -1,10 +1,11 @@
-from typing import Dict, List, Set
+# -*- coding: utf-8 -*-
+
+from typing import Dict, Set
 
 from .actors import actors
 from .command import ModelCommand
 from .command_channel import ModelCommandChannel
 from .eventcallback import apply_event
-from common.event.event import Event
 from common.gameobj.basegobj import GameObject
 from common.gameobj.map.tilemaps import TileMap, Tile
 from common.observer import interface

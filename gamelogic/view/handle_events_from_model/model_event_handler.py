@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from typing import List, Set, Dict
 
-from common.event.event import GobjEvent, GobjMeleeAttackEvent, GobjWaitEvent, GobjMoveEvent
+from common.event.event import GobjEvent, GobjMeleeAttackEvent, GobjWaitEvent
 from common.gameobj.basegobj import GameObject
 from common.utils import utils
-from gamelogic.view.visualisation.visualisation import VisualisationsContainer
+from gamelogic.view.visualisation.visual_container import VisualisationsContainer
 from gamelogic.view.timings.timings import Timings
 from .eventcallback import GobjEventsCallbacks
 

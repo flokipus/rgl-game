@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Tuple, Union
 
 from common.event.event import GobjEvent
@@ -7,9 +9,10 @@ from common.observer.interface import Subject, Observer
 from common.utils.user_input.keyboard_processor import UserKeyboardProcessor
 from common.utils import utils
 from gamelogic.model.model import ModelGame
-from gamelogic.view.visualisation.visualisation_states.basic import VisualState
 from gamelogic.view.settings.input_settings import KEYS_TO_COMMANDS, PlayerCommand
-from .visualisation.visualisation import Visualisation, VisualisationsContainer
+from .visualisation.visualisation_states import IVisualState
+from .visualisation.visualisation import Visualisation
+from .visualisation.visual_container import VisualisationsContainer
 from .display.display import Display
 from .timings.timings import Timings
 from .handle_events_from_model.model_event_handler import ModelEventHandler
@@ -68,7 +71,7 @@ class ViewGame(Observer, Subject):
     def is_ready(self) -> bool:
         return self._gobj_event_handler.ready()
 
-    def set_new_visual_state(self, gobj: GameObject, new_state: VisualState) -> None:
+    def set_new_visual_state(self, gobj: GameObject, new_state: IVisualState) -> None:
         self._visualisations.set_visual_state(gobj, new_state)
 
     def get_gobj_visualisation(self, gobj) -> Visualisation:

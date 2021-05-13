@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 import pygame
 
 from common.gameobj.basegobj import GameObject
 from common.gameobj.map.tilemaps import test_tile_map
-from common import globals
+from common import global_parameters
 from common.utils.utils import Vec2i
 from gamelogic.controller import controller
 from gamelogic.model import model  # ModelGame
@@ -78,7 +80,7 @@ if __name__ == '__main__':
     PERFOMANCE_DATA.global_start()
     while True:
         PERFOMANCE_DATA.new_frame()
-        globals.current_time_ms = pygame.time.get_ticks()
+        global_parameters.current_frame_time_ms = pygame.time.get_ticks()
         command_from_user = view_game.get_user_commands()
         if command_from_user == view.PlayerCommand.EXIT_GAME:
             PERFOMANCE_DATA.global_end()

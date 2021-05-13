@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 class Timings:
     """Класс-контейнер, содержит информацию о времени анимаций различных действий"""
     def __init__(self, time_to_move: float, time_to_attack: float, fps: int):

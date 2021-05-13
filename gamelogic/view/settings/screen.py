@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 FPS = 30
 MAP_WIDTH = 1920
 MAP_HEIGHT = 800

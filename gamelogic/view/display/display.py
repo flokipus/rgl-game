@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 from __future__ import annotations
 from typing import List, Tuple
 import pygame
 
 from common.utils import utils
-from gamelogic.view.visualisation.visualisation import Visualisation, VisualisationsContainer
+from gamelogic.view.visualisation.visualisation import Visualisation
+from gamelogic.view.visualisation.visual_container import VisualisationsContainer
 
 from _DEBUG_perf import PERFOMANCE_DATA
 

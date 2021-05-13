@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pygame
 
 from gamelogic.view.settings.user_moves import PlayerCommand

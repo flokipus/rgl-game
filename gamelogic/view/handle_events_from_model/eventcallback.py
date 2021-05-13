@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 from common.event import event
 from common.utils import utils
-from gamelogic.view.visualisation.visualisation_states import derived as visual_states
-from gamelogic.view.visualisation.visualisation import VisualisationsContainer
-from gamelogic.view.visualisation.camera.camera_states import derived as camera_states
+from gamelogic.view.camera import camera_states
+from gamelogic.view.visualisation import visualisation_states as visual_states
+from gamelogic.view.visualisation.visual_container import VisualisationsContainer
 from gamelogic.view.sound import axe_sound
 
 
@@ -39,8 +41,8 @@ class GobjEventsCallbacks:
                                                                    delay_ratio=0.0,
                                                                    fps=self._timings.fps
                                                                    )
-            camera = visualisations.get_camera()
-            camera.set_new_state(new_camera_state)
+            current_camera = visualisations.get_camera()
+            current_camera.set_new_state(new_camera_state)
 
     def gobj_attack_callback(self,
                              event_occured: event.GobjMeleeAttackEvent,
@@ -54,8 +56,8 @@ class GobjEventsCallbacks:
                                          fps=self._timings.fps)
         )
         if isinstance(event_occured, event.PlayerMeleeAttackEvent):
-            camera = visualisations.get_camera()
-            camera.set_new_state(camera_states.CameraShaking(
+            current_camera = visualisations.get_camera()
+            current_camera.set_new_state(camera_states.CameraShaking(
                 decay_time=self._timings.time_to_attack,
                 delay=self._timings.time_to_attack / 2,
                 amplitude=5,
