@@ -27,6 +27,24 @@ class PerfomanceData:
         self.draw_time_stamp_end = 0
         self.draw_total = 0
 
+        self.blit_last_elapsed = 0
+        self.blit_total = 0
+
+        self.display_update_begin = 0
+        self.display_update_end = 0
+        self.display_update_total = 0
+
+    def display_start(self):
+        self.display_update_begin = pygame.time.get_ticks()
+
+    def display_end(self):
+        self.display_update_end = pygame.time.get_ticks()
+        elapsed = self.display_update_end - self.display_update_begin
+        if elapsed >= 0:
+            self.display_update_total += elapsed
+        else:
+            raise AssertionError('Code error')
+
     def global_start(self):
         self.global_time_begin = pygame.time.get_ticks()
 
@@ -94,13 +112,15 @@ class PerfomanceData:
             self.visuals_total,
             self.draw_total)
         )
-        print('Average time per frame for model: {}ms; for view: {}ms;'
-              ' for layer building: {}ms; for drawing: {}ms'.format(
+        print('Average time per frame for model: {}ms; for view: {}ms;\n'
+              ' for layer building: {}ms; for drawing: {}ms; \nfor bliting: {}ms; for display update: {}'.format(
             self.model_total / self.frame_counter,
             self.visuals_total / self.frame_counter,
             self.layer_build_total / self.frame_counter,
-            self.draw_total / self.frame_counter)
+            self.draw_total / self.frame_counter,
+            self.blit_total / self.frame_counter,
+            self.display_update_total / self.frame_counter)
         )
 
 
-PERFOMANCE_DATA = PerfomanceData(fps=30)
+PERFOMANCE_DATA = PerfomanceData(fps=60)

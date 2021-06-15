@@ -15,12 +15,12 @@ class ModelCommandChannel:
     def request_command(self) -> Union[None, command.ModelCommand]: ...
 
     @overload
-    def put_command(self, command: command.ModelCommand) -> None: ...
+    def put_command(self, new_command: command.ModelCommand) -> None: ...
 
     def request_command(self) -> Union[None, command.ModelCommand]:
         pass
 
-    def put_command(self, command: command.ModelCommand) -> None:
+    def put_command(self, new_command: command.ModelCommand) -> None:
         pass
 
 
@@ -34,14 +34,14 @@ class UserCommandChannel(ModelCommandChannel):
         if len(self.command_buffer) == 0:
             return None
         else:
-            command = self.command_buffer[0]
+            curr_command = self.command_buffer[0]
             self.command_buffer.pop(0)
-            return command
+            return curr_command
 
-    def put_command(self, command: command.ModelCommand) -> None:
+    def put_command(self, new_command: command.ModelCommand) -> None:
         if len(self.command_buffer) == self.max_buffer_len:
             self.command_buffer.pop(0)
-        self.command_buffer.append(command)
+        self.command_buffer.append(new_command)
 
 
 class AIRandMoveCC(ModelCommandChannel):

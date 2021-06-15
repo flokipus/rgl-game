@@ -81,6 +81,7 @@ if __name__ == '__main__':
     while True:
         PERFOMANCE_DATA.new_frame()
         global_parameters.current_frame_time_ms = pygame.time.get_ticks()
+        # print(f'Begin frame: {global_parameters.current_frame_time_ms}ms')
         command_from_user = view_game.get_user_commands()
         if command_from_user == view.PlayerCommand.EXIT_GAME:
             PERFOMANCE_DATA.global_end()
@@ -94,5 +95,23 @@ if __name__ == '__main__':
             PERFOMANCE_DATA.end_model()
 
         view_game.update()
+
+        new_frame_time = pygame.time.get_ticks()
+        frame_ms = new_frame_time - global_parameters.current_frame_time_ms
+        if frame_ms > 1000 / view_game.timings.fps:
+            print('=========================================')
+            print(f'Frame drop: frame elapsed time: {frame_ms}')
+            draw_elapsed = PERFOMANCE_DATA.draw_time_stamp_end - PERFOMANCE_DATA.draw_time_stamp_begin
+            model_elapsed = PERFOMANCE_DATA.model_time_stamp_end - PERFOMANCE_DATA.model_time_stamp_begin
+            layers_elapsed = PERFOMANCE_DATA.layer_build_stamp_end - PERFOMANCE_DATA.layer_build_stamp_begin
+            visual_elapsed = PERFOMANCE_DATA.visuals_time_stamp_end - PERFOMANCE_DATA.visuals_time_stamp_begin
+            bliting_elapsed = PERFOMANCE_DATA.blit_last_elapsed
+            display_elapsed = PERFOMANCE_DATA.display_update_end - PERFOMANCE_DATA.display_update_begin
+            print(f'Time for model {model_elapsed}ms; for view {visual_elapsed}ms; \n'
+                  f'for layer building {layers_elapsed}ms; for drawing {draw_elapsed}ms;\n'
+                  f'for bliting: {bliting_elapsed}ms; for display update: {display_elapsed}')
+        else:
+            # print(f'End frame: elapsed {frame_ms}ms')
+            pass
 
         clock.tick(view_game.timings.fps)

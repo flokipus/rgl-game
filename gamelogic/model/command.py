@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 
-from typing import List, overload
-
+from typing import List
+from abc import ABC, abstractmethod
 
 from common.gameobj.basegobj import GameObject
 from common.event import event
 from common.utils.utils import Vec2i
 
 
-class ModelCommand:
-    @overload
-    def to_model_events(self, model, gobj: GameObject) -> List[event.Event]: ...
+class Action(ABC):
+    @abstractmethod
+    def apply(self, model) -> List[event.Event]: ...
 
+
+class ModelCommand:
     def to_model_events(self, model, gobj: GameObject) -> List[event.Event]:
+        pass
+
+    def interpret(self, model, gobj: GameObject) -> Action:
         pass
 
 
@@ -31,7 +36,8 @@ class MoveGobjCommand(ModelCommand):
             events_list.append(event.GobjWaitEvent(gobj, wait_cost))
         else:
             # TODO: we need some fast sparse structures
-            for actor_gobj in model.get_actors_gobjs():
+            actors = model.get_actors().get_all_actors_view()
+            for actor_gobj in actors:
                 if gobj == actor_gobj:
                     continue
                 actor_pos = actor_gobj.get_pos()
