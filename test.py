@@ -35,7 +35,7 @@ def predefined_actors():
                 for j_new in range(scale):
                     new_pos = (scale * i + i_new, scale * j + j_new)
                     new_sprite.set_at(new_pos, pi_color)
-
+    print(new_sprite.get_size())
     main_hero = GameObject(pos=Vec2i(8, 18), name='main_char', sprite=new_sprite)
     actors[main_hero] = input_channel
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     actors, main_hero = predefined_actors()
 
     model_game = model.ModelGame(init_actors=actors, tile_map=tile_map, items=set(), player_character=main_hero)
-    timings = Timings(time_to_move=0.3, time_to_attack=0.3, fps=30)
+    timings = Timings(time_to_move=0.3, time_to_attack=0.3, fps=60)
     view_game = view.ViewGame(model=model_game, screen_size=screen.SCREEN_SIZE, tile_size_pixels=screen.CELL_SIZE,
                               timings=timings, layers_num=4)
 

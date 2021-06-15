@@ -19,6 +19,7 @@ class ModelGame(interface.Subject):
                  items: Set[GameObject],
                  player_character: GameObject):
         super().__init__()
+        self._subj = interface.Subject()
         if player_character not in init_actors:
             raise RuntimeError('Player character should be actor')
         self._actors: actors.Actors = actors.Actors(initial_actors=init_actors)

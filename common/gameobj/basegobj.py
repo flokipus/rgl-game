@@ -9,6 +9,8 @@ class GameObject:
     """Base class for all game objects (objects that represents something visible (or not) in game)
     """
 
+    __slots__ = ('_pos', '_sprite', '_name', '__id')
+
     __class_id_counter = 0
 
     def __init__(self, *, pos: Vec2i, name: str = '', sprite: Union[None, pygame.Surface] = None):
@@ -50,3 +52,15 @@ class GameObject:
 
     def set_name(self, new_name):
         self._name = new_name
+
+
+if __name__ == '__main__':
+    from sys import getsizeof
+    sp = pygame.Surface(size=(15, 155))
+    test_gobj1 = GameObject(pos=Vec2i(1, 2), name='Monster', sprite=sp)
+    print(getsizeof(test_gobj1))
+    test_gobj2 = GameObject(pos=Vec2i(1, 2), name='Monster2', sprite=None)
+    print(getsizeof(test_gobj2))
+    test_gobj3 = GameObject(pos=Vec2i(1, 2), name='Monster3', sprite=None)
+    print(getsizeof(test_gobj3))
+    print(getsizeof(test_gobj3))

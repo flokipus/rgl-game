@@ -3,6 +3,8 @@ from typing import Union, Tuple
 
 
 class Vec2i:
+    __slots__ = ('xy', )
+
     def __init__(self, x: Union[int, float], y: Union[int, float]):
         self.xy = (int(x), int(y))
 
@@ -86,3 +88,6 @@ if __name__ == '__main__':
     print(v1[0])
     print(v1 * v2)
     print(v1.dot(v2))
+
+    import sys
+    print(sys.getsizeof(v1))
