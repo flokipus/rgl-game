@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 import pygame
-from abc import ABC, abstractmethod
-from copy import copy
 from dataclasses import dataclass
 from typing import Union, List, Tuple, TypeVar, Generic
 
@@ -29,9 +27,9 @@ class CantPutThisOn(Exception):
 
 @dataclass
 class CharacterItems:
-    torso: body_cells.TorsoCell = items.TorsoArmor()
-    left_hand: body_cells.LeftHandCell = items.BareFist()
-    right_hand: body_cells.RightHandCell = items.BareFist()
+    torso: body_cells.TorsoCell = body_cells.TorsoCell(items.BareArmor())
+    left_hand: body_cells.LeftHandCell = body_cells.LeftHandCell(items.BareArmor())
+    right_hand: body_cells.RightHandCell = body_cells.RightHandCell(items.BareFist())
 
     def eval_weight(self) -> int:
         total_weight = self.torso.weight() + \

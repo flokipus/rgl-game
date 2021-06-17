@@ -82,7 +82,7 @@ class IArmor(IEquipment):
         """From 0 to 100. Characters attributes are taken into account"""
 
     @abstractmethod
-    def damage_reduction(self, target_character) -> int:
+    def damage_reduction(self) -> int:
         pass
 
 
@@ -97,9 +97,10 @@ class BareArmor(IArmor):
         return RequirementCheckAnswer(result=True, message_reason='')
 
     def chance_to_avoid_hit(self) -> int:
-        return 0
+        """In percentage"""
+        return 100
 
-    def damage_reduction(self, target_character) -> int:
+    def damage_reduction(self) -> int:
         return 0
 
 

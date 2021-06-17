@@ -2,8 +2,8 @@
 
 from typing import List, Set, Dict
 
-from common.event.event import GobjEvent, GobjMeleeAttackEvent, GobjWaitEvent
-from common.gameobj.basegobj import GameObject
+from common.event import event as m_event
+from common.gameobj.characters.base_character import Character
 from common.utils import utils
 from gamelogic.view.visualisation.visual_container import VisualisationsContainer
 from gamelogic.view.timings.timings import Timings
@@ -24,23 +24,27 @@ class BlockOfEvents:
 
     def __init__(self):
         self.events = list()
-        self.busy_gobjs_adjs: Dict[GameObject, Set[GameObject]] = dict()
-        self.all_busy_gobjs: Set[GameObject] = set()
+        self.busy_gobjs_adjs: Dict[Character, Set[Character]] = dict()
+        self.all_busy_gobjs: Set[Character] = set()
 
-    def __contains__(self, item: GameObject) -> bool:
+    def __contains__(self, item: Character) -> bool:
         return item in self.all_busy_gobjs
 
-    def add_event(self, event: GobjEvent) -> None:
+    def add_event(self, event: m_event.Event) -> None:
         """Добавить эвент в блок. При этом, добавляются также соответствующие занятые объекты"""
         self.events.append(event)
-        if not isinstance(event, GobjWaitEvent):
-            self.busy_gobjs_adjs[event.turn_maker] = set()
-            self.all_busy_gobjs.add(event.turn_maker)
-        if isinstance(event, GobjMeleeAttackEvent):
-            self.busy_gobjs_adjs[event.turn_maker].add(event.target_for_attack)
-            self.all_busy_gobjs.add(event.target_for_attack)
+        if isinstance(event, m_event.CharacterMadeMeleeAttack):
+            if event.who in self.busy_gobjs_adjs:
+                self.busy_gobjs_adjs[event.who].add(event.whom)
+            else:
+                self.busy_gobjs_adjs[event.who] = {event.whom}
+            self.all_busy_gobjs.add(event.who)
+            self.all_busy_gobjs.add(event.whom)
+        if isinstance(event, m_event.CharacterMadeMove) or isinstance(event, m_event.CharacterDied):
+            self.busy_gobjs_adjs[event.who] = set()
+            self.all_busy_gobjs.add(event.who)
 
-    def remove_busy_src(self, participants_to_delete: Set[GameObject]):
+    def remove_busy_src(self, participants_to_delete: Set[Character]):
         """Удаляет все GameObject'ы из gobjs_to_delete. При этом, каждый gobj из gobjs_to_delete должен быть
         "порождающим"
         """
@@ -59,29 +63,38 @@ class ModelEventHandler:
                  timings: Timings,
                  tile_size_pixels: utils.Vec2i,
                  visualisations: VisualisationsContainer):
-        self._event_queue: List[GobjEvent] = list()
+        self._event_queue: List[Character] = list()
         self._block_of_events = BlockOfEvents()
         self._callbacker = GobjEventsCallbacks(timings, tile_size_pixels)
         self._visualisations = visualisations
         self.__to_remove_buffer = set()
 
-    def add_event(self, event: GobjEvent) -> None:
+    def add_event(self, event: Character) -> None:
         self._event_queue.append(event)
 
     def remove_finished_events(self):
         self.__to_remove_buffer.clear()
         for gobj in self._block_of_events.busy_gobjs_adjs:
-            visualisation = self._visualisations.get_gobj_visual(gobj)
-            if visualisation.ready():
+            try:
+                visualisation = self._visualisations.get_gobj_visual(gobj)
+                if visualisation.ready():
+                    self.__to_remove_buffer.add(gobj)
+            except KeyError:
                 self.__to_remove_buffer.add(gobj)
         self._block_of_events.remove_busy_src(self.__to_remove_buffer)
 
-    def is_event_breakable(self, event: GobjEvent) -> bool:
+    def is_event_breakable(self, event: m_event.Event) -> bool:
         response = False
-        if event.turn_maker in self._block_of_events:
-            response = True
-        elif isinstance(event, GobjMeleeAttackEvent):
-            if event.target_for_attack in self._block_of_events.all_busy_gobjs:
+        if isinstance(event, m_event.CharacterMadeMove):
+            if event.who in self._block_of_events:
+                response = True
+        elif isinstance(event, m_event.CharacterDied):
+            if event.who in self._block_of_events:
+                response = True
+        elif isinstance(event, m_event.CharacterMadeMeleeAttack):
+            if event.who in self._block_of_events:
+                response = True
+            if event.whom in self._block_of_events.all_busy_gobjs:
                 response = True
         return response
 

@@ -2,7 +2,7 @@
 
 from typing import Tuple, Union
 
-from common.event.event import GobjEvent
+from common.event.event import Event
 from common.gameobj.basegobj import GameObject
 from common.observer.interface import Subject, Observer
 
@@ -45,7 +45,7 @@ class ViewGame(Observer, Subject):
         self._keys_to_commands = KEYS_TO_COMMANDS
 
     def on_notify(self, subject, event) -> None:
-        if isinstance(subject, ModelGame) and isinstance(event, GobjEvent):
+        if isinstance(subject, ModelGame) and isinstance(event, Event):
             self._gobj_event_handler.add_event(event)
         else:
             raise NotImplemented('Only GobjEvent from ModelGame are implemented atm.')

@@ -3,9 +3,8 @@
 from typing import Dict, Set
 
 from .actors import actors
-from .command import ModelCommand
-from .command_channel import ModelCommandChannel
-from .eventcallback import apply_event
+from .actor_intention import ActorIntention
+from .intention_channel import IntentionChannel
 from common.gameobj.basegobj import GameObject
 from common.gameobj.characters.base_character import Character
 from common.gameobj.items import items as itemsm
@@ -16,7 +15,7 @@ from common.utils.utils import Vec2i
 
 class ModelGame(interface.Subject):
     def __init__(self,
-                 init_actors: Dict[Character, ModelCommandChannel],
+                 init_actors: Dict[Character, IntentionChannel],
                  tile_map: TileMap,
                  items: Set[itemsm.IItem],
                  player_character: Character):
@@ -30,7 +29,7 @@ class ModelGame(interface.Subject):
         self._items = items
 
     @property
-    def player_character(self) -> GameObject:
+    def player_character(self) -> Character:
         return self._player_character
 
     def get_actors(self) -> actors.Actors:
@@ -63,12 +62,12 @@ class ModelGame(interface.Subject):
             this_turn_command = this_turn_comm_channel.request_command()
             if this_turn_command is None and this_turn_gobj == self._player_character:
                 break
-            new_events = this_turn_command.to_model_events(model=self, gobj=this_turn_gobj)
+            action = this_turn_command.interpret(model=self, character=this_turn_gobj)
+            new_events = action.apply(model=self)
             for event in new_events:
-                apply_event(event_occured=event, game_model=self)  # self._actors can be updated here
                 self.notify(event)
             next_turn_gobj = self._actors.current_actor()
             does_controlled_by_player = (next_turn_gobj == self._player_character)
 
-    def put_user_command(self, command: ModelCommand) -> None:
+    def put_user_command(self, command: ActorIntention) -> None:
         self._actors.get_command_channel(self._player_character).put_command(command)

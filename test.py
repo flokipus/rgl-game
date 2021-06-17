@@ -4,12 +4,15 @@ from __future__ import annotations
 import pygame
 
 from common.gameobj.basegobj import GameObject
+from common.gameobj.characters.base_character import Character, CharacterAttributes, CharacterItems
+from common.gameobj.items.items import OneHandAxe
+
 from common.gameobj.map.tilemaps import test_tile_map
 from common import global_parameters
 from common.utils.utils import Vec2i
 from gamelogic.controller import controller
 from gamelogic.model import model  # ModelGame
-from gamelogic.model import command_channel  # PlayerCommand
+from gamelogic.model import intention_channel  # PlayerCommand
 from gamelogic.view import view  # PlayerCommand
 from gamelogic.view.graphics.cell_sprites import predef
 from gamelogic.view.settings import colors, screen
@@ -21,7 +24,7 @@ from _DEBUG_perf import PERFOMANCE_DATA
 def predefined_actors():
     actors = dict()
 
-    input_channel = command_channel.UserCommandChannel()
+    input_channel = intention_channel.UserIntentionChannel()
     viking_sprite = pygame.image.load('./_gamedata/test2.png')
 
     w, h = viking_sprite.get_size()
@@ -36,16 +39,31 @@ def predefined_actors():
                     new_pos = (scale * i + i_new, scale * j + j_new)
                     new_sprite.set_at(new_pos, pi_color)
     print(new_sprite.get_size())
-    main_hero = GameObject(pos=Vec2i(8, 18), name='main_char', sprite=new_sprite)
+    main_hero_items = CharacterItems()
+    main_hero_items.right_hand.put_item(OneHandAxe())
+    main_hero = Character(pos=Vec2i(8, 18), name='main_char',
+                          sprite=new_sprite,
+                          attributes=CharacterAttributes(16, 14, 15, 10, 10),
+                          inventory_capacity=20,
+                          base_hp=1000,
+                          character_items=main_hero_items)
     actors[main_hero] = input_channel
 
     d_spr = predef.CELL_CREATOR.create('D', colors.BLUE, colors.TRANSPARENT_COLOR)
-    dragon_gobj = GameObject(pos=Vec2i(10, 18), name='dragon', sprite=d_spr)
-    ai_com_chan = command_channel.AIRandMoveCC()
+    dragon_gobj = Character(pos=Vec2i(10, 18), name='dragon', sprite=d_spr,
+                            attributes=CharacterAttributes(10, 10, 10, 10, 10),
+                            inventory_capacity=20,
+                            base_hp=100,
+                            character_items=CharacterItems())
+    ai_com_chan = intention_channel.AIRandMoveIC()
     actors[dragon_gobj] = ai_com_chan
 
     n_spr = predef.CELL_CREATOR.create('@', colors.BW_GREY, colors.TRANSPARENT_COLOR)
-    necro_gobj = GameObject(pos=Vec2i(12, 18), name='necromancer', sprite=n_spr)
+    necro_gobj = Character(pos=Vec2i(12, 18), name='necromancer', sprite=n_spr,
+                           attributes=CharacterAttributes(10, 10, 10, 10, 10),
+                           inventory_capacity=20,
+                           base_hp=100,
+                           character_items=CharacterItems())
     actors[necro_gobj] = ai_com_chan
     return actors, main_hero
 
@@ -53,7 +71,7 @@ def predefined_actors():
 def predefined_actors_2():
     actors = dict()
     m_spr = predef.CELL_CREATOR.create('@', colors.WHITE, colors.TRANSPARENT_COLOR)
-    input_channel = command_channel.UserCommandChannel()
+    input_channel = intention_channel.UserIntentionChannel()
     main_hero = GameObject(pos=Vec2i(8, 18), name='main_char', sprite=m_spr)
     actors[main_hero] = input_channel
     return actors, main_hero

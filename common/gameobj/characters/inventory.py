@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List, Union, TypeVar, Generic
 from common.gameobj.items.items import IItem
 
 
@@ -13,18 +12,21 @@ class CantPutToFullCell(Exception):
     pass
 
 
-class ItemCell:
-    def __init__(self):
-        self.item: Union[IItem, None] = None
+T = TypeVar('T', bound=IItem)
+
+
+class ItemCell(Generic[T]):
+    def __init__(self, default_item=None):
+        self.item: Union[T, None] = default_item
 
     def empty(self) -> bool:
         return self.item is None
 
-    def put_item(self, item: IItem) -> None:
+    def put_item(self, item: T) -> None:
         if not self.empty(): raise CantPutToFullCell('Cant put item to full cell')
         self.item = item
 
-    def remove_item(self) -> Union[IItem, None]:
+    def remove_item(self) -> Union[T, None]:
         if self.empty():
             return None
         item = self.item

@@ -114,7 +114,7 @@ class TurnOrderInTime:
     def remove_gobj_by_id(self, gobj_id: int) -> None:
         raw_data = self._move_turns.raw_data()
         for i, (binding, counter) in enumerate(raw_data):
-            gobj: GameObject = binding['actor']
+            gobj: GameObject = binding.gobj
             if gobj.id == gobj_id:
                 raw_data.pop(i)
                 break

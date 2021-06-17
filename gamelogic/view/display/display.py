@@ -58,16 +58,25 @@ class Display:
 
     def _draw_layers(self, center: utils.Vec2i) -> None:
         PERFOMANCE_DATA.blit_last_elapsed = 0
+        screen_size = self._screen_size  # optimization is important
+        monitor_center = self._monitor_center
+        center_tuple = center.to_tuple()
+        p_xy = [0, 0]
         for i in range(self._layers.num_layers()):
             layer = self._layers.get_layer(i)
             for visual in layer:
                 sprite = visual.get_sprite()
-                pos = visual.get_corner_xy() - center
-                pos_at_display = self.descartes_to_monitor(pos)
-                # t_begin = pygame.time.get_ticks()
-                self._display.blit(sprite, pos_at_display.to_tuple())
-                # t_end = pygame.time.get_ticks()
-                # PERFOMANCE_DATA.blit_last_elapsed += (t_end - t_begin)
+
+                p_xy[0], p_xy[1] = visual.get_corner_xy().to_tuple()
+                p_xy[0] -= center_tuple[0]
+                p_xy[1] -= center_tuple[1]
+                p_xy[1] = screen_size[1] - p_xy[1] - monitor_center[1]
+                p_xy[0] += monitor_center[0]
+
+                t_begin = pygame.time.get_ticks()
+                self._display.blit(sprite, p_xy)
+                t_end = pygame.time.get_ticks()
+                PERFOMANCE_DATA.blit_last_elapsed += (t_end - t_begin)
         PERFOMANCE_DATA.blit_total += PERFOMANCE_DATA.blit_last_elapsed
 
     def descartes_to_monitor(self, xy_desc: utils.Vec2i) -> utils.Vec2i:

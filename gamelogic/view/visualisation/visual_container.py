@@ -7,6 +7,7 @@ from .visualisation import Visualisation
 from .visualisation_states import Standing, IVisualState, PassiveStanding
 from common.utils import utils
 from common.gameobj.basegobj import GameObject
+from common.gameobj.characters.base_character import Character
 from gamelogic.view.camera import camera, camera_states
 from gamelogic.model import model
 
@@ -25,7 +26,7 @@ def adhoc_dot_sprite(tile_size_pixels: utils.Vec2i, boldness: int, transparency:
 class VisualisationsContainer:
     def __init__(self, tile_size_pixels: utils.Vec2i):
         self._visuals: Dict[GameObject, Visualisation] = dict()
-        self._player_character: Union[None, GameObject] = None
+        self._player_character: Union[None, Character] = None
         self._tile_size_pixels = tile_size_pixels
         self._camera = camera.Camera(utils.Vec2i(0, 0), camera_states.CameraBaseState())
 
@@ -54,6 +55,10 @@ class VisualisationsContainer:
             pixel_xy = self.cell_ij_to_pixel(gobj.get_pos())
             visual = Visualisation(sprite=gobj.get_sprite(), layer=0, pixel_xy_offset=pixel_xy, state=PassiveStanding())
             self.set_gobj_visual(gobj, visual)
+
+    @property
+    def player_character(self) -> Union[None, Character]:
+        return self._player_character
 
     def cell_ij_to_pixel(self, ij: utils.Vec2i) -> utils.Vec2i:
         return self._tile_size_pixels.dot(ij)
